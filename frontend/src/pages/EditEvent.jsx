@@ -20,7 +20,7 @@ const EditEvent = () => {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/events`);
+        const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events`);
         const events = await response.json();
         const currentEvent = events.find(e => e._id === id);
         
@@ -49,7 +49,7 @@ const EditEvent = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/events/${id}`, {
+      const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -10,7 +10,7 @@ const MySchedule = () => {
     const fetchBookmarks = async () => {
       const token = localStorage.getItem('token');
       try {
-        const response = await fetch('http://localhost:5000/api/events/my-bookmarks', {
+        const response = await fetch('https://college-event-portal-a0d1.onrender.com/api/events/my-bookmarks', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -35,7 +35,7 @@ const MySchedule = () => {
   const handleRemove = async (eventId) => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`http://localhost:5000/api/events/${eventId}/bookmark`, {
+      const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/bookmark`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

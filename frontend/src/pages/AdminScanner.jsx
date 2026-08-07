@@ -91,7 +91,7 @@ const AdminScanner = () => {
 
     try {
       // FIXED: URL updated to /checkin to match backend routes
-      const response = await fetch(`http://localhost:5000/api/events/${eventId}/checkin`, {
+      const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/checkin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

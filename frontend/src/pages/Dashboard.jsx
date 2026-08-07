@@ -25,7 +25,7 @@ const Dashboard = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/events');
+      const response = await fetch('https://college-event-portal-a0d1.onrender.com/api/events');
       const data = await response.json();
       setEvents(data);
     } catch (error) {
@@ -51,7 +51,7 @@ const Dashboard = () => {
     }
     fetchEvents();
 
-    const socket = io('http://localhost:5000');
+    const socket = io('https://college-event-portal-a0d1.onrender.com');
 
     socket.on('receive-announcement', (data) => {
       setAnnouncements((prev) => {
@@ -73,7 +73,7 @@ const Dashboard = () => {
   const handleRegister = async (eventId, requestAccommodation = false) => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`http://localhost:5000/api/events/${eventId}/register`, {
+      const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ const Dashboard = () => {
   const handleBookmark = async (eventId) => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`http://localhost:5000/api/events/${eventId}/bookmark`, {
+      const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/bookmark`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -118,7 +118,7 @@ const Dashboard = () => {
     if (!teamName) return alert("Please enter a team name!");
 
     try {
-      const response = await fetch(`http://localhost:5000/api/events/${eventId}/team`, {
+      const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/team`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -147,7 +147,7 @@ const Dashboard = () => {
     if (!inviteCode) return alert("Please enter the invite code!");
 
     try {
-      const response = await fetch(`http://localhost:5000/api/events/${eventId}/team/join`, {
+      const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/team/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,7 +179,7 @@ const Dashboard = () => {
     if (!window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) return;
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`http://localhost:5000/api/events/${eventId}`, {
+      const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

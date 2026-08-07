@@ -17,7 +17,7 @@ const Profile = () => {
     const fetchProfile = async () => {
       const token = localStorage.getItem('token');
       try {
-        const response = await fetch('http://localhost:5000/api/auth/profile', {
+        const response = await fetch('https://college-event-portal-a0d1.onrender.com/api/auth/profile', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -39,7 +39,7 @@ const Profile = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/update-profile', {
+      const response = await fetch('https://college-event-portal-a0d1.onrender.com/api/auth/update-profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ const Profile = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/update-password', {
+      const response = await fetch('https://college-event-portal-a0d1.onrender.com/api/auth/update-password', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

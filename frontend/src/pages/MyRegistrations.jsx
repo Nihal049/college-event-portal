@@ -22,7 +22,7 @@ const MyRegistrations = () => {
     
     const fetchMyEvents = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/events/my-registrations', {
+        const response = await fetch('https://college-event-portal-a0d1.onrender.com/api/events/my-registrations', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -31,7 +31,7 @@ const MyRegistrations = () => {
           // Fetch team data for events that allow teams
           const eventsWithTeams = await Promise.all(data.map(async (event) => {
             if (event.allowTeams) {
-              const teamRes = await fetch(`http://localhost:5000/api/events/${event._id}/team`, {
+              const teamRes = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${event._id}/team`, {
                 headers: { 'Authorization': `Bearer ${token}` }
               });
               const teamData = await teamRes.json();
@@ -56,7 +56,7 @@ const MyRegistrations = () => {
 
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`http://localhost:5000/api/events/${eventId}/cancel`, {
+      const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/cancel`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

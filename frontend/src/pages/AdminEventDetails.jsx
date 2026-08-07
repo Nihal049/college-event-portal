@@ -13,7 +13,7 @@ const AdminEventDetails = () => {
     const fetchDetails = async () => {
       const token = localStorage.getItem('token');
       try {
-        const response = await fetch(`http://localhost:5000/api/events/${id}/admin-details`, {
+        const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${id}/admin-details`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -201,7 +201,7 @@ const AdminEventDetails = () => {
                             const roomInput = e.target.roomNumber.value;
                             const token = localStorage.getItem('token');
                             try {
-                              const res = await fetch(`http://localhost:5000/api/events/${event._id}/assign-room`, {
+                              const res = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${event._id}/assign-room`, {
                                 method: 'PUT',
                                 headers: {
                                   'Content-Type': 'application/json',
