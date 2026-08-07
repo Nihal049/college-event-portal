@@ -1,25 +1,21 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 const sendEmail = async (options) => {
-  const transporter = nodemailer.createTransport({
-    // Your existing email service configuration stays the same
-    service: process.env.EMAIL_SERVICE || 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
-  const mailOptions = {
-    from: `Event Portal <${process.env.EMAIL_USER}>`,
-    to: options.email,
-    subject: options.subject,
-    // FIX: Catch both 'message' (plain text) and 'html' (rich text)
-    text: options.message, 
-    html: options.html,    
-  };
+    const data = await resend.emails.send({
+      from: 'onboarding@resend.dev', // Resend's default testing address
+      to: options.email,
+      subject: options.subject,
+      text: options.message,
+      html: options.html || `<p>${options.message}</p>` 
+    });
 
-  await transporter.sendMail(mailOptions);
+    console.log("Email sent successfully via Resend:", data);
+  } catch (error) {
+    console.error("Background email failed:", error);
+  }
 };
 
 module.exports = sendEmail;
