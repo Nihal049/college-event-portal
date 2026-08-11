@@ -5,6 +5,7 @@ const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const navigate = useNavigate();
 
@@ -15,6 +16,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
+    setIsSubmitting(true);
 
     try {
       const response = await fetch('https://college-event-portal-a0d1.onrender.com/api/auth/login', {
@@ -26,7 +28,7 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage('Login successful!');
+        setMessage('Authentication successful. Initializing...');
         setIsError(false);
         
         // Save both the token and the user's role to local storage
@@ -34,88 +36,137 @@ const Login = () => {
         localStorage.setItem('role', data.role);
         
         // Redirect to dashboard
-        setTimeout(() => navigate('/dashboard'), 1000);
+        setTimeout(() => navigate('/dashboard'), 1500);
       } else {
         setMessage(data.message || 'Invalid credentials');
         setIsError(true);
+        setIsSubmitting(false);
       }
     } catch (error) {
       setMessage('Cannot connect to server.');
       setIsError(true);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-[#fff8f6] py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-sans selection:bg-orange-500/20">
+      
+      {/* --- AURORA AMBIENT BACKGROUND BLOBS --- */}
+      <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-rose-300/40 rounded-full blur-[120px] pointer-events-none mix-blend-multiply"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-300/40 rounded-full blur-[120px] pointer-events-none mix-blend-multiply"></div>
+      
+      <div className="max-w-md w-full relative z-10">
         
-        <div>
-          <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
-            Welcome Back
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Log in to manage your events
-          </p>
-        </div>
-
-        {message && (
-          <div className={`p-3 rounded-md text-sm text-center font-medium ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-            {message}
-          </div>
-        )}
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Email address</label>
-              <input
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm mt-1"
-                placeholder="student@college.edu"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Password</label>
-              <input
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm mt-1"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
+        {/* --- MAIN AURORA GLASS CARD --- */}
+        <div className="bg-white/60 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] shadow-xl shadow-rose-900/5 border border-white relative overflow-hidden group">
           
-          <div className="text-right mt-1">
-              <Link to="/forgot-password" className="text-xs text-blue-600 hover:text-blue-500">
-                  Forgot your password?
-              </Link>
-        </div>
-
-          <div>
-            <button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-            >
-              Sign In
-            </button>
+          {/* Header Section */}
+          <div className="mb-10 text-center relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border bg-white text-orange-600 border-orange-100 mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+              Secure Portal
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-black text-stone-800 pb-1 leading-tight tracking-tight">
+              Event Management
+            </h1>
           </div>
-        </form>
 
-        <div className="text-center mt-4">
-          <p className="text-sm text-gray-600">
-            Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              Sign up here
-            </Link>
-          </p>
+          {/* Alert Message */}
+          {message && (
+            <div className={`p-4 rounded-2xl text-sm text-center font-bold mb-6 transition-all border backdrop-blur-md relative z-10 shadow-sm ${
+              isError 
+                ? 'bg-rose-50 text-rose-600 border-rose-200' 
+                : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+            }`}>
+              {message}
+            </div>
+          )}
+
+          <form className="space-y-6 relative z-10" onSubmit={handleSubmit}>
+            <div className="space-y-5">
+              
+              {/* Email Input */}
+              <div>
+                <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none opacity-50">
+                    <span className="text-stone-400 text-lg">✉️</span>
+                  </div>
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    className="block w-full pl-12 pr-4 py-3.5 bg-white/50 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all font-bold text-stone-800 outline-none placeholder-stone-400 shadow-inner"
+                    placeholder="student@college.edu"
+                    value={formData.email}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              {/* Password Input */}
+              <div>
+                <div className="flex justify-between items-center mb-2 ml-1 mr-1">
+                  <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest">
+                    Password
+                  </label>
+                  <Link to="/forgot-password" className="text-[10px] font-black text-orange-500 hover:text-orange-400 uppercase tracking-widest transition-colors">
+                    Forgot?
+                  </Link>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none opacity-50">
+                    <span className="text-stone-400 text-lg">🔒</span>
+                  </div>
+                  <input
+                    name="password"
+                    type="password"
+                    required
+                    className="block w-full pl-12 pr-4 py-3.5 bg-white/50 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all font-bold text-stone-800 outline-none placeholder-stone-400 shadow-inner"
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`w-full flex justify-center items-center py-4 rounded-xl text-white font-black text-sm uppercase tracking-widest shadow-lg transform transition-all ${
+                  isSubmitting 
+                    ? 'bg-stone-200 border border-stone-200 text-stone-400 cursor-not-allowed shadow-none' 
+                    : 'bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 shadow-rose-500/25 hover:-translate-y-0.5 active:scale-95'
+                }`}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-3">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Authenticating...
+                  </span>
+                ) : (
+                  'System Login'
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* Register Link */}
+          <div className="mt-8 pt-6 border-t border-white/50 text-center relative z-10">
+            <p className="text-sm font-medium text-stone-500">
+              Don't have an account?{' '}
+              <Link to="/register" className="font-black text-orange-600 hover:text-orange-500 transition-colors ml-1">
+                Sign Up Here
+              </Link>
+            </p>
+          </div>
+
         </div>
       </div>
     </div>

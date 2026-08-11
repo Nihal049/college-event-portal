@@ -17,8 +17,6 @@ const AdminScanner = () => {
     let isMounted = true;
 
     const initializeScanner = async () => {
-      // MAGIC FIX: Give React's Strict Mode a tiny delay to release the hardware
-      // before trying to grab it again. This prevents the blank screen!
       await new Promise(resolve => setTimeout(resolve, 150));
       
       if (!isMounted) return;
@@ -46,7 +44,7 @@ const AdminScanner = () => {
               if (!data.eventId || !data.userId) throw new Error("Invalid format");
               await processCheckIn(data.eventId, data.userId);
             } catch (error) {
-              setMessage('❌ Invalid QR Code format.');
+              setMessage('Invalid QR Code format.');
               setIsError(true);
             }
           },
@@ -90,7 +88,6 @@ const AdminScanner = () => {
     const token = localStorage.getItem('token');
 
     try {
-      // FIXED: URL updated to /checkin to match backend routes
       const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/checkin`, {
         method: 'POST',
         headers: {
@@ -101,14 +98,14 @@ const AdminScanner = () => {
       });
       const data = await response.json();
       if (response.ok) {
-        setMessage('✅ ' + data.message);
+        setMessage(data.message);
         setIsError(false);
       } else {
-        setMessage('❌ ' + data.message);
+        setMessage(data.message);
         setIsError(true);
       }
     } catch (error) {
-      setMessage('❌ Cannot connect to server.');
+      setMessage('Cannot connect to server.');
       setIsError(true);
     }
   };
@@ -134,50 +131,86 @@ const AdminScanner = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 sm:p-10 transition-colors">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex justify-between items-center mb-8 border-b dark:border-gray-700 pb-4">
+    <div className="min-h-screen bg-[#fff8f6] py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-sans flex flex-col items-center selection:bg-orange-500/20">
+      
+      {/* --- AURORA AMBIENT BACKGROUND BLOBS --- */}
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-rose-300/40 rounded-full blur-[100px] pointer-events-none mix-blend-multiply"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-orange-300/40 rounded-full blur-[100px] pointer-events-none mix-blend-multiply"></div>
+      
+      <div className="max-w-2xl w-full relative z-10">
+        
+        {/* --- HEADER --- */}
+        <div className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Ticket Scanner</h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">Volunteer Access Portal</p>
+            <h1 className="text-3xl md:text-4xl font-black text-stone-800 pb-1 tracking-tight">
+              Gate Scanner
+            </h1>
+            <span className="inline-flex items-center gap-2 mt-2 text-[10px] font-black text-orange-600 bg-orange-50 border border-orange-100 px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+              Volunteer System
+            </span>
           </div>
           <button 
             onClick={handleSafeNavigation} 
-            className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg font-medium transition-colors"
+            className="group flex items-center gap-2 bg-white/60 hover:bg-white border border-white text-stone-600 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 backdrop-blur-md transform hover:-translate-y-0.5 shadow-sm active:scale-95"
           >
-            Exit Scanner
+            <span className="text-xl group-hover:-translate-x-1 transition-transform text-stone-400">←</span>
+            Exit
           </button>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+        {/* --- MAIN AURORA GLASS CARD --- */}
+        <div className="bg-white/60 backdrop-blur-xl p-6 sm:p-10 rounded-[2.5rem] shadow-xl shadow-rose-900/5 border border-white text-center flex flex-col items-center relative overflow-hidden">
           
+          {/* Status Message Display */}
           {message && (
-            <div className={`p-4 mb-6 rounded-lg text-lg font-bold shadow-sm ${
+            <div className={`w-full p-5 mb-8 rounded-2xl text-lg sm:text-xl font-black border backdrop-blur-md transition-all transform animate-fade-in-up flex items-center justify-center gap-3 relative z-10 shadow-sm ${
               isError 
-                ? 'bg-red-100 text-red-700 border-2 border-red-500 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800' 
-                : 'bg-green-100 text-green-700 border-2 border-green-500 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
+                ? 'bg-rose-50 text-rose-600 border-rose-200' 
+                : 'bg-emerald-50 text-emerald-600 border-emerald-200'
             }`}>
+              <span className="text-2xl">{isError ? '⚠️' : '✅'}</span>
               {message}
             </div>
           )}
 
           {isScanning && !scanResult ? (
-            <div>
-              <p className="text-gray-500 dark:text-gray-400 mb-4 font-medium">
-                Position the student's QR code in the frame
+            <div className="w-full flex flex-col items-center relative z-10">
+              <p className="text-stone-500 font-bold uppercase tracking-widest text-xs mb-6 flex items-center gap-2">
+                Scanning for tickets...
               </p>
-              <div id="reader" className="mx-auto overflow-hidden rounded-xl border-4 border-gray-200 dark:border-gray-700 w-full sm:w-[400px] min-h-[300px] bg-black"></div>
+              
+              {/* Camera Frame */}
+              <div className="relative w-full max-w-[400px] aspect-square rounded-[2rem] p-2 bg-white border border-white shadow-xl shadow-rose-900/5">
+                {/* 
+                  Note: The actual camera feed needs a dark background so it blends well when 
+                  the camera is initializing or if aspect ratios don't match. 
+                */}
+                <div 
+                  id="reader" 
+                  className="w-full h-full rounded-[1.5rem] overflow-hidden bg-stone-900 flex items-center justify-center border border-stone-800"
+                ></div>
+                
+                {/* Warm Sunset Scanning Corners */}
+                <div className="absolute top-6 left-6 w-10 h-10 border-t-4 border-l-4 border-orange-400 rounded-tl-xl pointer-events-none drop-shadow-[0_0_8px_rgba(249,115,22,0.6)]"></div>
+                <div className="absolute top-6 right-6 w-10 h-10 border-t-4 border-r-4 border-orange-400 rounded-tr-xl pointer-events-none drop-shadow-[0_0_8px_rgba(249,115,22,0.6)]"></div>
+                <div className="absolute bottom-6 left-6 w-10 h-10 border-b-4 border-l-4 border-rose-400 rounded-bl-xl pointer-events-none drop-shadow-[0_0_8px_rgba(2fb,113,133,0.6)]"></div>
+                <div className="absolute bottom-6 right-6 w-10 h-10 border-b-4 border-r-4 border-rose-400 rounded-br-xl pointer-events-none drop-shadow-[0_0_8px_rgba(2fb,113,133,0.6)]"></div>
+              </div>
             </div>
           ) : (
-            <div className="py-10">
-              <p className="text-gray-600 dark:text-gray-300 mb-6 font-medium text-lg">
-                Ready for the next student?
+            <div className="py-12 flex flex-col items-center w-full relative z-10">
+              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-orange-50">
+                <span className="text-4xl block translate-y-1 drop-shadow-sm">🎫</span>
+              </div>
+              <p className="text-stone-800 mb-8 font-black text-xl tracking-tight">
+                Ready for the next scan?
               </p>
               <button 
                 onClick={handleScanAgain}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl transition-colors shadow-lg transform hover:scale-105"
+                className="w-full max-w-sm bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 text-white font-black px-8 py-4 rounded-2xl transition-transform shadow-lg shadow-rose-500/25 active:scale-95 text-lg flex items-center justify-center gap-3"
               >
-                📷 Scan Next Ticket
+                <span className="text-2xl drop-shadow-md">📷</span> Scan Next
               </button>
             </div>
           )}

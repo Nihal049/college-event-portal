@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import Swal from 'sweetalert2';
 
 const Dashboard = () => {
   const [events, setEvents] = useState([]);
@@ -22,6 +23,13 @@ const Dashboard = () => {
   const [teamInput, setTeamInput] = useState({}); 
 
   const navigate = useNavigate();
+
+  // Warm Light-Mode SweetAlert Config (Aurora Style)
+  const swalConfig = {
+    background: '#ffffff',
+    color: '#292524',
+    customClass: { popup: 'rounded-[2rem] shadow-2xl border border-orange-50 font-sans' }
+  };
 
   const fetchEvents = async () => {
     try {
@@ -85,13 +93,31 @@ const Dashboard = () => {
       const data = await response.json();
 
       if (response.ok) {
-        alert(`🎉 ${data.message}`);
+        Swal.fire({
+          ...swalConfig,
+          title: 'Success!',
+          text: data.message,
+          icon: 'success',
+          confirmButtonColor: '#f97316', // Orange-500
+        });
         fetchEvents();
       } else {
-        alert(`❌ ${data.message}`); 
+        Swal.fire({
+          ...swalConfig,
+          title: 'Oops!',
+          text: data.message,
+          icon: 'error',
+          confirmButtonColor: '#f43f5e' // Rose-500
+        });
       }
     } catch (error) {
-      alert('❌ Cannot connect to server.');
+      Swal.fire({
+        ...swalConfig,
+        title: 'Connection Error',
+        text: 'Cannot connect to server.',
+        icon: 'error',
+        confirmButtonColor: '#f43f5e'
+      });
     }
   };
 
@@ -104,10 +130,24 @@ const Dashboard = () => {
       });
       const data = await response.json();
       if (response.ok) {
-        alert(`🔖 ${data.message}`);
+        Swal.fire({
+          ...swalConfig,
+          title: 'Added to Itinerary!',
+          text: data.message,
+          icon: 'success',
+          confirmButtonColor: '#f97316',
+          timer: 2000,
+          showConfirmButton: false
+        });
       }
     } catch (error) {
-      alert('❌ Cannot connect to server.');
+      Swal.fire({
+        ...swalConfig,
+        title: 'Connection Error',
+        text: 'Cannot connect to server.',
+        icon: 'error',
+        confirmButtonColor: '#f43f5e'
+      });
     }
   };
 
@@ -115,7 +155,15 @@ const Dashboard = () => {
     const token = localStorage.getItem('token');
     const teamName = teamInput[eventId];
 
-    if (!teamName) return alert("Please enter a team name!");
+    if (!teamName) {
+      return Swal.fire({
+        ...swalConfig,
+        title: 'Missing Information',
+        text: 'Please enter a team name!',
+        icon: 'warning',
+        confirmButtonColor: '#f59e0b'
+      });
+    }
 
     try {
       const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/team`, {
@@ -130,13 +178,31 @@ const Dashboard = () => {
       const data = await response.json();
 
       if (response.ok) {
-        alert(`🎉 ${data.message}\n\nMake sure to share your Invite Code with your teammates!`);
+        Swal.fire({
+          ...swalConfig,
+          title: 'Team Created! 🎉',
+          text: `${data.message}\n\nMake sure to share your Invite Code with your teammates!`,
+          icon: 'success',
+          confirmButtonColor: '#f97316'
+        });
         fetchEvents();
       } else {
-        alert(`❌ ${data.message}`); 
+        Swal.fire({
+          ...swalConfig,
+          title: 'Error',
+          text: data.message,
+          icon: 'error',
+          confirmButtonColor: '#f43f5e'
+        });
       }
     } catch (error) {
-      alert('❌ Cannot connect to server.');
+      Swal.fire({
+        ...swalConfig,
+        title: 'Connection Error',
+        text: 'Cannot connect to server.',
+        icon: 'error',
+        confirmButtonColor: '#f43f5e'
+      });
     }
   };
 
@@ -144,7 +210,15 @@ const Dashboard = () => {
     const token = localStorage.getItem('token');
     const inviteCode = teamInput[eventId];
 
-    if (!inviteCode) return alert("Please enter the invite code!");
+    if (!inviteCode) {
+      return Swal.fire({
+        ...swalConfig,
+        title: 'Missing Information',
+        text: 'Please enter the invite code!',
+        icon: 'warning',
+        confirmButtonColor: '#f59e0b'
+      });
+    }
 
     try {
       const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/team/join`, {
@@ -159,13 +233,31 @@ const Dashboard = () => {
       const data = await response.json();
 
       if (response.ok) {
-        alert(`🎉 ${data.message}`);
+        Swal.fire({
+          ...swalConfig,
+          title: 'Joined Successfully!',
+          text: data.message,
+          icon: 'success',
+          confirmButtonColor: '#f97316'
+        });
         fetchEvents();
       } else {
-        alert(`❌ ${data.message}`); 
+        Swal.fire({
+          ...swalConfig,
+          title: 'Error',
+          text: data.message,
+          icon: 'error',
+          confirmButtonColor: '#f43f5e'
+        });
       }
     } catch (error) {
-      alert('❌ Cannot connect to server.');
+      Swal.fire({
+        ...swalConfig,
+        title: 'Connection Error',
+        text: 'Cannot connect to server.',
+        icon: 'error',
+        confirmButtonColor: '#f43f5e'
+      });
     }
   };
 
@@ -176,7 +268,19 @@ const Dashboard = () => {
   };
 
   const handleDelete = async (eventId) => {
-    if (!window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) return;
+    const result = await Swal.fire({
+      ...swalConfig,
+      title: 'Are you sure?',
+      text: 'You want to delete this event? This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#f43f5e',
+      cancelButtonColor: '#a8a29e',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (!result.isConfirmed) return;
+
     const token = localStorage.getItem('token');
     try {
       const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}`, {
@@ -185,64 +289,105 @@ const Dashboard = () => {
       });
       if (response.ok) {
         setEvents(events.filter(event => event._id !== eventId));
+        Swal.fire({
+          ...swalConfig,
+          title: 'Deleted!',
+          text: 'The event has been successfully deleted.',
+          icon: 'success',
+          confirmButtonColor: '#f97316'
+        });
       } else {
         const data = await response.json();
-        alert(`❌ ${data.message}`);
+        Swal.fire({
+          ...swalConfig,
+          title: 'Error',
+          text: data.message,
+          icon: 'error',
+          confirmButtonColor: '#f43f5e'
+        });
       }
     } catch (error) {
-      alert('❌ Cannot connect to server.');
+      Swal.fire({
+        ...swalConfig,
+        title: 'Connection Error',
+        text: 'Cannot connect to server.',
+        icon: 'error',
+        confirmButtonColor: '#f43f5e'
+      });
     }
   };
 
+  // --- ADVANCED FILTERING & AUTO-ARCHIVING ---
   const filteredEvents = events.filter((event) => {
+    // 1. Check Search and Category
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           event.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    
+    // 2. Auto-Archive Logic (Hide completed events)
+    const eventDate = new Date(event.date);
+    const now = new Date();
+    
+    // We add 24 hours (86,400,000 milliseconds) to the event date so it doesn't vanish 
+    // from the dashboard while the event is currently happening!
+    const isNotExpired = eventDate.getTime() + (24 * 60 * 60 * 1000) >= now.getTime();
+
+    // 3. Visibility Rule: Students/Volunteers only see active events. Admins see everything.
+    const isVisibleToUser = isNotExpired || userRole === 'admin';
+
+    return matchesSearch && matchesCategory && isVisibleToUser;
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 sm:p-10 relative">
+    <div className="min-h-screen bg-[#fff8f6] py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-sans text-stone-800 selection:bg-orange-500/20">
       
+      {/* --- AURORA AMBIENT BACKGROUND BLOBS --- */}
+      <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-rose-300/40 rounded-full blur-[120px] pointer-events-none mix-blend-multiply"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-300/40 rounded-full blur-[120px] pointer-events-none mix-blend-multiply"></div>
+
       {/* --- LIVE BROADCAST BANNER POPUP --- */}
       {latestAlert && (
-        <div className="fixed top-5 right-5 z-50 max-w-md bg-red-600 text-white p-4 rounded-xl shadow-2xl border-2 border-white animate-bounce flex items-start gap-3">
-          <span className="text-2xl">🚨</span>
+        <div className="fixed top-5 right-5 z-50 max-w-md bg-white/90 backdrop-blur-xl p-5 rounded-3xl shadow-xl shadow-rose-500/10 border border-rose-100 animate-bounce flex items-start gap-4">
+          <span className="text-3xl filter drop-shadow-sm">🚨</span>
           <div className="flex-1">
-            <div className="flex justify-between items-center">
-              <h4 className="font-black uppercase tracking-wide text-sm">Live Announcement!</h4>
-              <span className="text-[10px] bg-red-800 px-2 py-0.5 rounded text-red-100">{latestAlert.time}</span>
+            <div className="flex justify-between items-center mb-1">
+              <h4 className="font-black uppercase tracking-widest text-[11px] text-rose-500">Live Announcement</h4>
+              <span className="text-[10px] font-bold bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full border border-rose-100">{latestAlert.time}</span>
             </div>
-            <p className="font-bold text-base mt-1">{latestAlert.title}</p>
-            <p className="text-sm text-red-100 mt-0.5">{latestAlert.message}</p>
+            <p className="font-black text-lg leading-tight text-stone-800">{latestAlert.title}</p>
+            <p className="text-sm text-stone-500 mt-1 font-medium">{latestAlert.message}</p>
           </div>
-          <button onClick={() => setLatestAlert(null)} className="text-red-200 hover:text-white font-bold text-lg">×</button>
+          <button onClick={() => setLatestAlert(null)} className="text-stone-400 hover:text-stone-800 font-bold text-xl transition-colors">×</button>
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto relative z-10">
         
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-extrabold text-gray-900">Event Dashboard</h1>
-            
-            <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide ${userRole === 'admin' ? 'bg-purple-100 text-purple-700' : userRole === 'volunteer' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+        {/* --- AURORA HEADER SECTION --- */}
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-10 gap-6 bg-white/60 backdrop-blur-xl p-6 md:p-8 rounded-[2rem] shadow-xl shadow-rose-900/5 border border-white">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <h1 className="text-4xl md:text-5xl font-black text-stone-800 tracking-tight">
+              Event Hub
+            </h1>
+            <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm mt-2 md:mt-0 border ${
+              userRole === 'admin' ? 'bg-orange-100 text-orange-600 border-orange-200' : 
+              userRole === 'volunteer' ? 'bg-rose-100 text-rose-600 border-rose-200' : 
+              'bg-white text-stone-600 border-stone-200'
+            }`}>
               {userRole === 'admin' ? 'Admin Portal' : userRole === 'volunteer' ? 'Volunteer Portal' : 'Student Portal'}
             </span>
           </div>
           
-          <div className="flex gap-4 items-center">
+          <div className="flex flex-wrap gap-3 items-center w-full xl:w-auto">
             
-            {/* Notification Bell Button */}
+            {/* Notification Bell */}
             <button 
               onClick={() => setShowNotificationModal(true)}
-              className="relative bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 p-2.5 rounded-lg transition-colors flex items-center justify-center shadow-sm"
-              title="View Announcements"
+              className="relative bg-white/80 hover:bg-white border border-white text-stone-700 w-12 h-12 rounded-xl transition-all duration-300 flex items-center justify-center transform hover:-translate-y-0.5 shadow-sm"
             >
-              🔔
+              <span className="text-xl">🔔</span>
               {announcements.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-pulse">
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-pulse shadow-md">
                   {announcements.length}
                 </span>
               )}
@@ -250,57 +395,62 @@ const Dashboard = () => {
 
             {userRole === 'student' && (
               <>
-                <Link to="/my-registrations" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
-                   My Registrations
+                <Link to="/my-registrations" className="bg-white/80 hover:bg-white text-orange-600 border border-white px-5 py-3 rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2 shadow-sm">
+                   🎫 My Tickets
                 </Link>
-                 <Link to="/schedule" className="text-purple-600 hover:text-purple-800 font-medium transition-colors ml-4">
-                   My Itinerary 📅
+                 <Link to="/schedule" className="bg-white/80 hover:bg-white text-stone-600 border border-white px-5 py-3 rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2 shadow-sm">
+                   📅 Itinerary
                 </Link>
               </>
             )}
-            <Link to="/profile" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
-              Profile
+            <Link to="/profile" className="bg-white/80 hover:bg-white text-stone-600 border border-white px-5 py-3 rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2 shadow-sm">
+              👤 Profile
             </Link>
 
             {(userRole === 'admin' || userRole === 'volunteer') && (
-              <Link to="/admin-scanner" className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
+              <Link to="/admin-scanner" className="bg-white/80 hover:bg-white text-stone-800 px-6 py-3 rounded-xl font-bold shadow-sm border border-white transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2">
                 📷 Scan Tickets
               </Link>
             )}
 
             {userRole === 'admin' && (
               <>
-                <Link to="/admin/broadcast" className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                <Link to="/admin/broadcast" className="bg-white/80 hover:bg-white border border-white text-rose-500 px-6 py-3 rounded-xl font-bold shadow-sm transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2">
                   📢 Broadcast
                 </Link>
-                <Link to="/create-event" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium transition-colors">
+                <Link to="/create-event" className="bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 text-white px-6 py-3 rounded-xl font-black shadow-md shadow-rose-500/20 transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2">
                   + Create Event
                 </Link>
               </>
             )}
 
-            <button onClick={handleLogout} className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-5 py-2 rounded-lg font-medium transition-colors">
+            <button onClick={handleLogout} className="bg-white/50 hover:bg-rose-50 text-rose-500 border border-white px-5 py-3 rounded-xl font-bold transition-all duration-300 ml-auto xl:ml-0 shadow-sm">
               Logout
             </button>
           </div>
         </div>
 
-        {/* Search and Filter */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8 items-center justify-between">
-          <input
-            type="text"
-            placeholder="Search events by title or description..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full md:w-96 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white"
-          />
-          <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+        {/* --- SEARCH & FILTER BAR --- */}
+        <div className="bg-white/60 backdrop-blur-xl p-3 rounded-[1.5rem] shadow-xl shadow-rose-900/5 border border-white flex flex-col md:flex-row gap-3 mb-10 items-center justify-between">
+          <div className="relative w-full md:w-1/3">
+            <span className="absolute left-4 top-3.5 text-stone-400">🔍</span>
+            <input
+              type="text"
+              placeholder="Search events..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-white/50 border border-white/50 rounded-xl focus:ring-2 focus:ring-orange-400 transition-colors font-medium text-stone-800 placeholder-stone-400 outline-none"
+            />
+          </div>
+          <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar">
             {['All', 'College Fest', 'Workshop', 'Hackathon', 'Seminar', 'Sports', 'Cultural'].map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                  selectedCategory === cat ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-300 ${
+                  selectedCategory === cat 
+                    ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md shadow-rose-500/20 border border-transparent' 
+                    : 'bg-transparent text-stone-500 hover:bg-white hover:text-stone-800 border border-transparent'
                 }`}
               >
                 {cat}
@@ -309,16 +459,20 @@ const Dashboard = () => {
           </div>
         </div>
         
-        {/* Events Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* --- EVENTS GRID --- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {loading ? (
             [...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 animate-pulse h-[350px] flex flex-col justify-between">
-                <div className="h-full bg-gray-100 rounded-lg"></div>
+              <div key={i} className="bg-white/60 backdrop-blur-xl p-8 rounded-[2rem] border border-white animate-pulse h-[400px] flex flex-col justify-between shadow-sm">
+                <div className="h-full bg-white/40 rounded-xl"></div>
               </div>
             ))
           ) : filteredEvents.length === 0 ? (
-            <p className="text-gray-500">No events found matching your search.</p>
+            <div className="col-span-full text-center py-20">
+              <span className="text-6xl block mb-4 opacity-50">🔭</span>
+              <h2 className="text-2xl font-black text-stone-800">No events found in this sector</h2>
+              <p className="text-stone-500 font-medium mt-2">Try adjusting your search parameters.</p>
+            </div>
           ) : (
             filteredEvents.map((event) => {
               const registeredCount = event.registeredUsers?.length || 0;
@@ -328,86 +482,98 @@ const Dashboard = () => {
               const isWaitlisted = userId && event.waitlistedUsers?.includes(userId);
 
               return (
-                <div key={event._id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-start">
-                      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-wide">
+                <div key={event._id} className="bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-xl shadow-rose-900/5 hover:shadow-2xl hover:shadow-rose-900/10 transition-all duration-500 transform hover:-translate-y-2 border border-white flex flex-col justify-between relative overflow-hidden group">
+                  
+                  <div className="p-7 relative z-10 flex-1 flex flex-col">
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="bg-white text-orange-600 border border-orange-100 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm">
                         {event.category}
                       </span>
                       {event.allowTeams && (
-                        <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md">
-                          👥 Teams up to {event.maxTeamSize}
+                        <span className="text-[10px] font-black text-stone-500 bg-white border border-stone-100 px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
+                          👥 Max {event.maxTeamSize}
                         </span>
                       )}
                     </div>
                     
-                    <h2 className="text-xl font-bold mt-4 mb-2 text-gray-900">{event.title}</h2>
-                    <p className="text-gray-600 mb-5 line-clamp-3 text-sm">{event.description}</p>
+                    <h2 className="text-2xl font-black text-stone-800 mt-2 mb-3 group-hover:text-orange-600 transition-colors leading-tight tracking-tight">{event.title}</h2>
+                    <p className="text-stone-500 mb-6 line-clamp-3 text-sm font-medium leading-relaxed">{event.description}</p>
                     
-                    <div className="text-sm text-gray-500 space-y-2 mb-6">
-                      <p className="flex items-center"><span className="mr-2">📍</span> {event.venue}</p>
-                      <p className="flex items-center"><span className="mr-2">📅</span> {new Date(event.date).toLocaleDateString()}</p>
-                      {/* NEW: Time and Day Display */}
-                      <p className="flex items-center"><span className="mr-2">⏰</span> {event.festDay || 'Day 1'} • {event.startTime || 'TBA'} - {event.endTime || 'TBA'}</p>
-                      <p className={`flex items-center font-bold ${isSoldOut ? 'text-red-600' : 'text-green-600'}`}>
-                        <span className="mr-2">🎟️</span> {registeredCount} / {event.seatLimit} Seats Filled
-                      </p>
+                    <div className="bg-white/50 p-4 rounded-2xl border border-white space-y-2.5 mt-auto">
+                      <p className="flex items-center text-sm font-bold text-stone-700"><span className="bg-white p-1 rounded-md shadow-sm text-xs mr-3">📍</span> {event.venue}</p>
+                      <p className="flex items-center text-sm font-bold text-stone-700"><span className="bg-white p-1 rounded-md shadow-sm text-xs mr-3">📅</span> {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                      <p className="flex items-center text-sm font-bold text-stone-700"><span className="bg-white p-1 rounded-md shadow-sm text-xs mr-3">⏰</span> {event.festDay || 'Day 1'} • {event.startTime || 'TBA'} - {event.endTime || 'TBA'}</p>
+                      
+                      {/* Frosted Progress Bar */}
+                      <div className="pt-3 mt-3 border-t border-white/50">
+                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-1.5">
+                          <span className={isSoldOut ? 'text-rose-500' : 'text-stone-500'}>Seats Filled</span>
+                          <span className="text-stone-500">{registeredCount} / {event.seatLimit}</span>
+                        </div>
+                        <div className="w-full bg-white/80 rounded-full h-2 overflow-hidden border border-white">
+                          <div 
+                            className={`h-2 rounded-full ${isSoldOut ? 'bg-rose-500' : 'bg-gradient-to-r from-orange-400 to-rose-400'}`} 
+                            style={{ width: `${Math.min((registeredCount / event.seatLimit) * 100, 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   
-                  <div>
+                  {/* --- ACTIONS SECTION --- */}
+                  <div className="p-7 pt-0 relative z-10">
                     {userRole === 'admin' || userRole === 'volunteer' ? (
-                      <div className="flex gap-2 mt-2">
-                        <Link to={`/admin/event/${event._id}`} className="flex-1 bg-gray-800 hover:bg-gray-900 text-white text-center font-medium py-2.5 rounded-lg transition-colors text-sm flex items-center justify-center">Details</Link>
+                      <div className="flex gap-3">
+                        <Link to={`/admin/event/${event._id}`} className="flex-1 bg-white hover:bg-orange-50 border border-stone-100 text-stone-700 text-center font-bold py-3.5 rounded-xl transition-all shadow-sm transform hover:-translate-y-0.5 text-sm">
+                          View Details
+                        </Link>
                         
                         {userRole === 'admin' && (
                           <>
-                            <Link to={`/admin/edit-event/${event._id}`} className="bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 px-3 py-2.5 rounded-lg transition-colors text-lg flex items-center justify-center" title="Edit Event">✏️</Link>
-                            <button onClick={() => handleDelete(event._id)} className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-2.5 rounded-lg transition-colors text-lg flex items-center justify-center" title="Delete Event">🗑️</button>
+                            <Link to={`/admin/edit-event/${event._id}`} className="bg-white hover:bg-orange-50 border border-stone-100 text-stone-600 w-12 flex items-center justify-center rounded-xl transition-all shadow-sm transform hover:-translate-y-0.5" title="Edit Event">✏️</Link>
+                            <button onClick={() => handleDelete(event._id)} className="bg-white hover:bg-rose-50 text-rose-500 border border-stone-100 w-12 flex items-center justify-center rounded-xl transition-all shadow-sm transform hover:-translate-y-0.5" title="Delete Event">🗑️</button>
                           </>
                         )}
                       </div>
                     ) : (
                       // Student View
-                      <div className="space-y-3 mt-2">
-
+                      <div className="space-y-3">
                         {isAlreadyRegistered ? (
                           <>
-                            <button disabled className="w-full bg-green-50 text-green-700 border border-green-200 font-bold py-2.5 rounded-lg cursor-not-allowed">
-                              ✅ Successfully Registered
+                            <button disabled className="w-full bg-emerald-50 text-emerald-600 border border-emerald-100 font-black tracking-wide py-3.5 rounded-xl cursor-not-allowed shadow-sm flex items-center justify-center gap-2">
+                              ✓ Registered
                             </button>
-                            {/* Bookmark Button MOVED here so it only shows if registered */}
                             <button 
                               onClick={() => handleBookmark(event._id)}
-                              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 rounded-lg transition-colors border border-gray-300"
+                              className="w-full bg-white/60 hover:bg-white text-stone-600 font-bold py-3 rounded-xl transition-colors border border-white shadow-sm flex items-center justify-center gap-2"
                             >
                               🔖 Add to Itinerary
                             </button>
                           </>
                         ) : isWaitlisted ? (
-                          <button disabled className="w-full bg-yellow-50 text-yellow-700 border border-yellow-200 font-bold py-2.5 rounded-lg cursor-not-allowed">
-                            ⏳ On Waitlist
+                          <button disabled className="w-full bg-amber-50 text-amber-500 border border-amber-100 font-black tracking-wide py-3.5 rounded-xl cursor-not-allowed flex items-center justify-center gap-2 shadow-sm">
+                            ⏳ Waitlisted
                           </button>
                         ) : isSoldOut ? (
                           <button 
                             onClick={() => handleRegister(event._id, accommodationRequests[event._id])}
-                            className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2.5 rounded-lg transition-colors"
+                            className="w-full bg-stone-800 hover:bg-stone-900 text-white font-black py-3.5 rounded-xl transition-all shadow-lg transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2"
                           >
                             Join Waitlist
                           </button>
                         ) : event.allowTeams ? (
                           
-                          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-3">
+                          <div className="bg-white/50 p-4 rounded-2xl border border-white space-y-3">
                             <div className="flex gap-2">
                               <button 
                                 onClick={() => setActiveTeamAction({...activeTeamAction, [event._id]: 'create'})}
-                                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${activeTeamAction[event._id] === 'create' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
+                                className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border ${activeTeamAction[event._id] === 'create' ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md border-transparent' : 'bg-white text-stone-500 border-white hover:bg-orange-50'}`}
                               >
                                 👑 Create Team
                               </button>
                               <button 
                                 onClick={() => setActiveTeamAction({...activeTeamAction, [event._id]: 'join'})}
-                                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${activeTeamAction[event._id] === 'join' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
+                                className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border ${activeTeamAction[event._id] === 'join' ? 'bg-stone-800 text-white shadow-md border-transparent' : 'bg-white text-stone-500 border-white hover:bg-orange-50'}`}
                               >
                                 🤝 Join Team
                               </button>
@@ -418,11 +584,11 @@ const Dashboard = () => {
                                 <input 
                                   type="text" 
                                   placeholder="Enter Team Name..."
-                                  className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                  className="flex-1 px-4 py-2 text-sm font-medium bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 outline-none text-stone-800 placeholder-stone-400"
                                   value={teamInput[event._id] || ''}
                                   onChange={(e) => setTeamInput({...teamInput, [event._id]: e.target.value})}
                                 />
-                                <button onClick={() => handleCreateTeam(event._id)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md text-sm font-bold">
+                                <button onClick={() => handleCreateTeam(event._id)} className="bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 text-white px-4 py-2 rounded-xl text-sm font-black transition-all shadow-md shadow-rose-500/20">
                                   Submit
                                 </button>
                               </div>
@@ -433,11 +599,11 @@ const Dashboard = () => {
                                 <input 
                                   type="text" 
                                   placeholder="Enter 6-Digit Code..."
-                                  className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 uppercase"
+                                  className="flex-1 px-4 py-2 text-sm font-bold tracking-widest bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-stone-800 uppercase outline-none text-stone-800 placeholder-stone-400"
                                   value={teamInput[event._id] || ''}
                                   onChange={(e) => setTeamInput({...teamInput, [event._id]: e.target.value})}
                                 />
-                                <button onClick={() => handleJoinTeam(event._id)} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-bold">
+                                <button onClick={() => handleJoinTeam(event._id)} className="bg-stone-800 hover:bg-stone-900 text-white px-4 py-2 rounded-xl text-sm font-black transition-all shadow-md">
                                   Join
                                 </button>
                               </div>
@@ -447,27 +613,29 @@ const Dashboard = () => {
                         ) : (
                           <>
                             {event.offersAccommodation && (
-                              <div className="flex items-center gap-2 p-2 bg-purple-50 rounded-lg border border-purple-100">
-                                <input
-                                  type="checkbox"
-                                  id={`acc-${event._id}`}
-                                  checked={!!accommodationRequests[event._id]}
-                                  onChange={(e) => setAccommodationRequests({
-                                    ...accommodationRequests,
-                                    [event._id]: e.target.checked
-                                  })}
-                                  className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500 border-gray-300"
-                                />
-                                <label htmlFor={`acc-${event._id}`} className="text-xs font-medium text-purple-900 cursor-pointer">
-                                  Request Overnight Accommodation
+                              <div className="flex items-center gap-3 p-3 bg-white/50 rounded-xl border border-white mb-3">
+                                <div className="relative flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    id={`acc-${event._id}`}
+                                    checked={!!accommodationRequests[event._id]}
+                                    onChange={(e) => setAccommodationRequests({
+                                      ...accommodationRequests,
+                                      [event._id]: e.target.checked
+                                    })}
+                                    className="peer w-5 h-5 bg-white border border-stone-200 rounded-md cursor-pointer accent-orange-500"
+                                  />
+                                </div>
+                                <label htmlFor={`acc-${event._id}`} className="text-[10px] font-black uppercase tracking-widest text-stone-600 cursor-pointer flex-1">
+                                  Request Hostel Stay
                                 </label>
                               </div>
                             )}
                             <button 
                               onClick={() => handleRegister(event._id, accommodationRequests[event._id])}
-                              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors"
+                              className="w-full bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 text-white font-black py-3.5 rounded-xl transition-all shadow-lg shadow-rose-500/25 transform hover:-translate-y-0.5 active:scale-95"
                             >
-                              Register for Event
+                              Get Ticket
                             </button>
                           </>
                         )}
@@ -481,33 +649,40 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* --- NOTIFICATION MODAL --- */}
       {showNotificationModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100">
-            <div className="flex justify-between items-center mb-4 border-b pb-3">
-              <h3 className="font-extrabold text-xl text-gray-900 flex items-center gap-2">📢 Live Announcements Feed</h3>
-              <button onClick={() => setShowNotificationModal(false)} className="text-gray-400 hover:text-gray-600 font-bold text-xl">×</button>
+        <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white/90 backdrop-blur-2xl rounded-[2.5rem] max-w-lg w-full p-8 shadow-2xl border border-white transform transition-all">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-black text-2xl text-stone-800 flex items-center gap-3 tracking-tight">
+                <span className="bg-white border border-stone-100 p-2 rounded-xl text-xl shadow-sm">📢</span> 
+                Updates Feed
+              </h3>
+              <button onClick={() => setShowNotificationModal(false)} className="text-stone-400 hover:text-stone-800 bg-white hover:bg-stone-50 border border-stone-100 w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl transition-colors shadow-sm">×</button>
             </div>
             
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto hide-scrollbar pr-2">
               {announcements.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No live announcements at the moment. You're all caught up!</p>
+                <div className="text-center py-10 bg-white/50 rounded-2xl border border-white">
+                  <span className="text-4xl block mb-3 opacity-50">📭</span>
+                  <p className="text-stone-500 font-bold">No announcements yet.</p>
+                </div>
               ) : (
                 announcements.map((item, idx) => (
-                  <div key={idx} className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
-                    <div className="flex justify-between items-center mb-1">
-                      <h4 className="font-bold text-blue-900">{item.title}</h4>
-                      <span className="text-xs text-blue-500 font-medium">{item.time}</span>
+                  <div key={idx} className="bg-white/60 border border-white border-l-4 border-l-orange-400 p-5 rounded-2xl relative overflow-hidden shadow-sm">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-black text-stone-800 text-lg leading-tight">{item.title}</h4>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-orange-500 bg-orange-50 px-2 py-1 rounded-md border border-orange-100 whitespace-nowrap ml-2">{item.time}</span>
                     </div>
-                    <p className="text-sm text-gray-700">{item.message}</p>
+                    <p className="text-sm font-medium text-stone-600">{item.message}</p>
                   </div>
                 ))
               )}
             </div>
 
-            <div className="mt-6 text-right">
-              <button onClick={() => setShowNotificationModal(false)} className="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2 rounded-lg text-sm font-medium">
-                Close
+            <div className="mt-8">
+              <button onClick={() => setShowNotificationModal(false)} className="w-full bg-stone-800 hover:bg-stone-900 text-white py-3.5 rounded-xl font-bold shadow-md transition-all active:scale-95">
+                Close Panel
               </button>
             </div>
           </div>

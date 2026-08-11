@@ -1,12 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { QRCodeSVG } from 'qrcode.react'; // Using SVG for sharper PDF rendering
+import { QRCodeSVG } from 'qrcode.react'; 
 import html2pdf from 'html2pdf.js'; 
+import Swal from 'sweetalert2'; 
 
 const MyRegistrations = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
+
+  // Warm Light-Mode SweetAlert Config (Aurora Style)
+  const swalConfig = {
+    background: '#ffffff',
+    color: '#292524',
+    customClass: { popup: 'rounded-[2rem] shadow-2xl border border-orange-50 font-sans' }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -28,7 +36,6 @@ const MyRegistrations = () => {
         const data = await response.json();
         
         if (response.ok) {
-          // Fetch team data for events that allow teams
           const eventsWithTeams = await Promise.all(data.map(async (event) => {
             if (event.allowTeams) {
               const teamRes = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${event._id}/team`, {
@@ -52,7 +59,18 @@ const MyRegistrations = () => {
   }, []);
 
   const handleCancel = async (eventId) => {
-    if (!window.confirm("Are you sure you want to cancel your ticket? If you are a team captain, leadership will be passed to the next member.")) return;
+    const result = await Swal.fire({
+      ...swalConfig,
+      title: 'Are you sure?',
+      text: 'If you are a team captain, leadership will be passed to the next member.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#f43f5e',
+      cancelButtonColor: '#a8a29e',
+      confirmButtonText: 'Yes, cancel it!',
+    });
+
+    if (!result.isConfirmed) return;
 
     const token = localStorage.getItem('token');
     try {
@@ -62,14 +80,32 @@ const MyRegistrations = () => {
       });
 
       if (response.ok) {
-        alert("✅ Registration cancelled successfully.");
+        Swal.fire({
+          ...swalConfig,
+          title: 'Cancelled!',
+          text: 'Registration cancelled successfully.',
+          icon: 'success',
+          confirmButtonColor: '#f97316'
+        });
         setEvents(events.filter(event => event._id !== eventId));
       } else {
         const data = await response.json();
-        alert(`❌ ${data.message}`);
+        Swal.fire({
+          ...swalConfig,
+          title: 'Error',
+          text: data.message,
+          icon: 'error',
+          confirmButtonColor: '#f43f5e'
+        });
       }
     } catch (error) {
-      alert("❌ Error connecting to server.");
+      Swal.fire({
+        ...swalConfig,
+        title: 'Connection Error',
+        text: 'Error connecting to server.',
+        icon: 'error',
+        confirmButtonColor: '#f43f5e'
+      });
     }
   };
 
@@ -77,19 +113,18 @@ const MyRegistrations = () => {
     const element = document.getElementById(`ticket-${eventId}`);
     const actionButtons = document.getElementById(`actions-${eventId}`);
     
-    // Hide buttons before taking the PDF snapshot
     if (actionButtons) actionButtons.style.display = 'none';
 
     const opt = {
       margin: 0.5, 
       filename: `${eventTitle.replace(/\s+/g, '_')}_Ticket.pdf`,
       image: { type: 'jpeg', quality: 0.98 }, 
-      html2canvas: { scale: 2, useCORS: true },
+      // Set the background color to white to match the light theme PDF export
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
       jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
     };
     
     html2pdf().set(opt).from(element).save().then(() => {
-      // Restore buttons after downloading
       if (actionButtons) actionButtons.style.display = 'flex';
     });
   };
@@ -108,136 +143,177 @@ const MyRegistrations = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors">
-        <p className="text-gray-500 dark:text-gray-400 font-bold text-lg animate-pulse">Loading your tickets...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#fff8f6]">
+        <div className="w-16 h-16 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mb-4"></div>
+        <p className="text-orange-500 font-black tracking-widest uppercase text-sm animate-pulse shadow-sm">Decrypting Passes...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4 transition-colors">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-[#fff8f6] py-12 px-4 sm:px-6 lg:px-8 font-sans relative overflow-hidden selection:bg-orange-500/20 text-stone-800">
+      
+      {/* --- AURORA AMBIENT BACKGROUND BLOBS --- */}
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-rose-300/40 rounded-full blur-[100px] pointer-events-none mix-blend-multiply"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-orange-300/40 rounded-full blur-[100px] pointer-events-none mix-blend-multiply"></div>
+
+      <div className="max-w-6xl mx-auto relative z-10">
         
-        <div className="flex justify-between items-center mb-8 border-b dark:border-gray-700 pb-4">
+        {/* --- AURORA HEADER --- */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6 bg-white/60 backdrop-blur-xl p-6 md:p-8 rounded-[2rem] shadow-xl shadow-rose-900/5 border border-white">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-black">My Tickets</h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">Present these QR codes at the venue door</p>
+            <h1 className="text-4xl md:text-5xl font-black text-stone-800 pb-2 tracking-tight">
+              Digital Passes
+            </h1>
+            <p className="text-orange-600 font-black uppercase tracking-widest text-[10px] flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></span>
+              Secure Access Granted
+            </p>
           </div>
-          <Link to="/dashboard" className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg font-medium transition-colors">
-            Back to Dashboard
+          <Link to="/dashboard" className="group flex items-center gap-2 bg-white/80 hover:bg-white border border-white text-stone-600 px-6 py-3 rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-0.5 shadow-sm active:scale-95">
+            <span className="text-xl group-hover:-translate-x-1 transition-transform text-stone-400">←</span>
+            Back to Hub
           </Link>
         </div>
 
         {events.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 p-10 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 text-center">
-            <span className="text-4xl mb-4 block">🎟️</span>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No active registrations</h2>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">You haven't registered for any upcoming events yet.</p>
-            <Link to="/dashboard" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold transition-colors">
-              Browse Events
+          <div className="bg-white/60 backdrop-blur-xl p-16 rounded-[2.5rem] border border-dashed border-stone-300 hover:border-orange-400 transition-colors text-center flex flex-col items-center justify-center shadow-xl shadow-rose-900/5">
+            <div className="w-24 h-24 bg-white border border-white rounded-full flex items-center justify-center shadow-sm mb-6 text-5xl">
+              🎫
+            </div>
+            <h2 className="text-3xl font-black text-stone-800 mb-3 tracking-tight">Your wallet is empty</h2>
+            <p className="text-stone-500 font-medium text-lg mb-8 max-w-md">You haven't encrypted any event passes yet. Browse the network and secure your spot!</p>
+            <Link to="/dashboard" className="bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 text-white px-8 py-4 rounded-2xl font-black text-lg shadow-lg shadow-rose-500/25 transition-all duration-300 transform hover:-translate-y-1 active:scale-95">
+              Explore Events
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
             {events.map((event) => {
-              // Format the precise JSON string the scanner is expecting
               const qrData = JSON.stringify({ eventId: event._id, userId: userId });
-              
               const myAccommodation = event.accommodationRequests?.find(req => req.student === userId || (req.student && req.student._id === userId));
               const isCheckedIn = event.checkedInUsers?.includes(userId);
               const team = event.myTeam;
 
               return (
-                <div key={event._id} className="relative">
+                <div key={event._id} className="relative group perspective-1000">
                   
-                  {/* The Visible Ticket Card */}
-                  <div id={`ticket-${event._id}`} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row overflow-hidden h-full">
+                  {/* --- THE TICKET DESIGN --- */}
+                  <div id={`ticket-${event._id}`} className="bg-white/70 backdrop-blur-3xl rounded-[2.5rem] shadow-xl shadow-rose-900/5 group-hover:shadow-2xl group-hover:shadow-rose-900/10 transition-all duration-500 transform group-hover:-translate-y-2 border border-white group-hover:border-orange-200 flex flex-col md:flex-row overflow-hidden relative">
                     
+                    {/* Decorative glowing blob behind the info */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-orange-400/20 to-rose-400/20 rounded-full blur-3xl opacity-50 -mr-20 -mt-20 pointer-events-none transition-opacity group-hover:opacity-100"></div>
+
                     {/* Left Side: Information */}
-                    <div className="p-6 md:w-2/3 flex flex-col justify-between">
+                    <div className="p-8 flex-1 flex flex-col justify-between relative z-10">
                       <div>
-                        <span className="text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-1 rounded-md uppercase tracking-wide">
-                          {event.category}
-                        </span>
-                        <h2 className="text-xl font-bold mt-3 mb-2 text-gray-900 dark:text-white leading-tight">{event.title}</h2>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1.5 mt-2">
-                          <p className="flex items-center"><span className="mr-2">📍</span> {event.venue}</p>
-                          <p className="flex items-center"><span className="mr-2">📅</span> {new Date(event.date).toLocaleDateString()}</p>
+                        <div className="flex items-center gap-3 mb-4">
+                          <span className="bg-white border border-orange-50 text-orange-600 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm">
+                            {event.category}
+                          </span>
+                        </div>
+                        
+                        <h2 className="text-2xl font-black text-stone-800 leading-tight mb-4 group-hover:text-orange-600 transition-colors tracking-tight">
+                          {event.title}
+                        </h2>
+                        
+                        <div className="flex flex-col gap-2 bg-white/50 backdrop-blur-md p-4 rounded-2xl border border-white">
+                          <p className="flex items-center text-stone-600 font-bold text-sm">
+                            <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-white mr-3 text-base shadow-sm">📍</span> 
+                            {event.venue}
+                          </p>
+                          <p className="flex items-center text-stone-600 font-bold text-sm">
+                            <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-white mr-3 text-base shadow-sm">📅</span> 
+                            {new Date(event.date).toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}
+                          </p>
                         </div>
 
                         {/* Team Info Section */}
                         {team && (
-                          <div className="mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg">
-                            <div className="flex justify-between items-start mb-2">
+                          <div className="mt-5 p-5 bg-white/60 border border-white rounded-2xl relative overflow-hidden shadow-sm">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-rose-300/30 rounded-full blur-xl -mr-10 -mt-10"></div>
+                            <div className="relative z-10 flex justify-between items-start mb-3">
                               <div>
-                                <p className="text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider">Team Roster</p>
-                                <p className="text-lg font-black text-indigo-900 dark:text-indigo-300">{team.name}</p>
+                                <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-0.5">Team Roster</p>
+                                <p className="text-xl font-black text-stone-800">{team.name}</p>
                               </div>
-                              <div className="bg-white dark:bg-gray-800 px-2 py-1 rounded border border-indigo-200 dark:border-indigo-700 text-center shadow-sm">
-                                <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Invite Code</p>
-                                <p className="font-mono font-bold text-indigo-700 dark:text-indigo-400">{team.inviteCode}</p>
+                              <div className="bg-white px-3 py-1.5 rounded-xl border border-rose-50 text-center shadow-sm">
+                                <p className="text-[9px] font-black text-stone-400 uppercase tracking-widest mb-0.5">Code</p>
+                                <p className="font-mono font-bold text-rose-500 text-sm">{team.inviteCode}</p>
                               </div>
                             </div>
                             
-                            <div className="space-y-1 mt-3">
-                              <p className="text-sm text-indigo-800 dark:text-indigo-300"><span className="font-bold">👑 Captain:</span> {team.captain?.name}</p>
+                            <div className="space-y-1.5 mt-2 relative z-10">
+                              <p className="text-sm text-stone-700 font-bold"><span className="font-bold mr-1">👑</span> {team.captain?.name} <span className="text-rose-400 text-[10px] uppercase tracking-widest ml-1">(Captain)</span></p>
                               {team.members?.map((member, idx) => (
-                                <p key={idx} className="text-sm text-indigo-700 dark:text-indigo-400 ml-5 flex items-center gap-2">
-                                  <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full"></span> {member.name}
+                                <p key={idx} className="text-sm text-stone-500 font-bold ml-6 flex items-center gap-2">
+                                  <span className="w-1.5 h-1.5 bg-orange-400 rounded-full"></span> {member.name}
                                 </p>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {/* Hostel Accommodation Status */}
+                        {/* Hostel Accommodation */}
                         {myAccommodation && (
-                          <div className={`mt-4 p-3 rounded-lg border ${myAccommodation.status === 'Approved' ? 'bg-green-50 border-green-100 dark:bg-green-900/20 dark:border-green-800/50' : 'bg-amber-50 border-amber-100 dark:bg-amber-900/20 dark:border-amber-800/50'}`}>
-                            <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${myAccommodation.status === 'Approved' ? 'text-green-800 dark:text-green-400' : 'text-amber-800 dark:text-amber-400'}`}>
-                              🛏️ Hostel Accommodation
-                            </p>
-                            {myAccommodation.status === 'Approved' ? (
-                              <p className="text-xl font-black text-green-600 dark:text-green-500 leading-none">Room: {myAccommodation.assignedRoom}</p>
-                            ) : (
-                              <p className="text-sm font-medium text-amber-700 dark:text-amber-500">Status: Pending Admin Approval</p>
+                          <div className={`mt-5 p-4 rounded-2xl border bg-white/80 shadow-sm flex items-center justify-between ${myAccommodation.status === 'Approved' ? 'border-emerald-100' : 'border-orange-100'}`}>
+                            <div>
+                              <p className={`text-[10px] font-black uppercase tracking-widest mb-0.5 ${myAccommodation.status === 'Approved' ? 'text-emerald-500' : 'text-orange-500'}`}>
+                                🛏️ Accommodation
+                              </p>
+                              {myAccommodation.status === 'Approved' ? (
+                                <p className="text-lg font-black text-stone-800">Room <span className="text-emerald-500">{myAccommodation.assignedRoom}</span></p>
+                              ) : (
+                                <p className="text-sm font-bold text-orange-500">Pending Approval</p>
+                              )}
+                            </div>
+                            {myAccommodation.status === 'Approved' && (
+                              <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center border border-emerald-100">
+                                <span className="text-emerald-500 text-xl">✓</span>
+                              </div>
                             )}
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* Right Side: QR Code & Actions */}
-                    <div className="bg-gray-50 dark:bg-gray-750 p-6 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-700 min-w-[200px]">
+                    {/* Right Side: QR Code Stub */}
+                    <div className="p-8 md:w-72 shrink-0 bg-white/40 border-t-2 md:border-t-0 md:border-l-2 border-dashed border-stone-200 flex flex-col items-center justify-center relative backdrop-blur-md">
                       
+                      {/* Ticket "Cutouts" - Desktop only to look like a punched stub */}
+                      <div className="hidden md:block absolute -left-[17px] top-[-1px] w-8 h-8 bg-[#fff8f6] rounded-full border-b border-r border-stone-200"></div>
+                      <div className="hidden md:block absolute -left-[17px] bottom-[-1px] w-8 h-8 bg-[#fff8f6] rounded-full border-t border-r border-stone-200"></div>
+
                       {isCheckedIn ? (
-                        <div className="text-center mb-4">
-                          <div className="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 p-3 rounded-full inline-block mb-2">
-                            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                        <div className="text-center w-full bg-emerald-50 p-6 rounded-3xl border border-emerald-100 mb-4 shadow-sm">
+                          <div className="bg-emerald-500 text-white p-4 rounded-full inline-block mb-3 shadow-md shadow-emerald-500/30">
+                            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
                           </div>
-                          <p className="text-sm font-bold text-green-700 dark:text-green-500 uppercase tracking-widest">Attended</p>
+                          <p className="text-xs font-black text-emerald-600 uppercase tracking-widest">Access Granted</p>
                         </div>
                       ) : (
-                        <div className="text-center mb-4">
-                          <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-200">
-                            <QRCodeSVG value={qrData} size={140} level="H" includeMargin={false} />
+                        <div className="text-center mb-6 w-full flex flex-col items-center">
+                          {/* QR Code container stays white for scanner readability */}
+                          <div className="bg-white p-3.5 rounded-3xl shadow-sm border-2 border-white group-hover:border-orange-300 transition-colors duration-500">
+                            <QRCodeSVG value={qrData} size={128} level="H" includeMargin={false} fgColor="#292524" />
                           </div>
-                          <p className="mt-3 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Admit One</p>
+                          <p className="mt-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Scan at Entrance</p>
                         </div>
                       )}
 
-                      {/* Action Buttons (These get hidden during PDF export!) */}
-                      <div id={`actions-${event._id}`} className="mt-2 flex flex-col items-center gap-3 w-full">
+                      {/* Action Buttons */}
+                      <div id={`actions-${event._id}`} className="mt-auto w-full space-y-3">
                         {isCheckedIn ? (
-                          <button onClick={() => downloadCertificate(event._id, event.title)} className="w-full bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold py-2.5 px-4 rounded-md transition-colors shadow-sm">
-                            🎓 Download Certificate
+                          <button onClick={() => downloadCertificate(event._id, event.title)} className="w-full bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-white text-sm font-black py-3.5 px-4 rounded-xl shadow-md shadow-orange-500/20 transform hover:-translate-y-0.5 transition-all">
+                            🎓 Get Certificate
                           </button>
                         ) : (
                           <>
-                            <button onClick={() => downloadTicket(event._id, event.title)} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 px-4 rounded-md transition-colors shadow-sm">
-                              📥 Download PDF Ticket
+                            <button onClick={() => downloadTicket(event._id, event.title)} className="w-full bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 text-white text-sm font-black py-3.5 px-4 rounded-xl shadow-md shadow-rose-500/20 transform hover:-translate-y-0.5 transition-all active:scale-95">
+                              Download PDF
                             </button>
-                            <button onClick={() => handleCancel(event._id)} className="text-xs font-bold text-red-500 hover:text-red-700 hover:underline">
-                              Cancel Registration
+                            <button onClick={() => handleCancel(event._id)} className="w-full bg-white border border-stone-200 hover:bg-rose-50 text-rose-500 text-xs font-bold py-3 px-4 rounded-xl transition-colors active:scale-95 shadow-sm">
+                              Cancel Ticket
                             </button>
                           </>
                         )}
@@ -246,17 +322,17 @@ const MyRegistrations = () => {
 
                   </div>
                   
-                  {/* HIDDEN CERTIFICATE TEMPLATE */}
+                  {/* HIDDEN CERTIFICATE TEMPLATE - Do not edit classes inside here as html2pdf needs standard styling */}
                   <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
-                    <div id={`cert-${event._id}`} className="w-[1056px] h-[816px] bg-white p-12 relative flex flex-col items-center justify-center text-center font-serif border-[16px] border-double border-blue-900">
-                      <div className="absolute top-4 left-4 w-16 h-16 border-t-4 border-l-4 border-yellow-500"></div>
-                      <div className="absolute top-4 right-4 w-16 h-16 border-t-4 border-r-4 border-yellow-500"></div>
-                      <div className="absolute bottom-4 left-4 w-16 h-16 border-b-4 border-l-4 border-yellow-500"></div>
-                      <div className="absolute bottom-4 right-4 w-16 h-16 border-b-4 border-r-4 border-yellow-500"></div>
-                      <h3 className="text-2xl font-bold tracking-widest text-gray-500 uppercase mb-8">Certificate of Participation</h3>
-                      <h1 className="text-5xl font-black text-blue-900 mb-12">{event.title}</h1>
-                      <p className="text-2xl text-gray-700 mb-4">This is proudly presented to acknowledge the successful participation and attendance at our event.</p>
-                      <p className="text-xl text-gray-500 mb-16">Hosted on <strong>{new Date(event.date).toLocaleDateString()}</strong> at <strong>{event.venue}</strong></p>
+                    <div id={`cert-${event._id}`} className="w-[1056px] h-[816px] bg-white p-12 relative flex flex-col items-center justify-center text-center font-serif border-[16px] border-double border-orange-900">
+                      <div className="absolute top-4 left-4 w-16 h-16 border-t-4 border-l-4 border-rose-500"></div>
+                      <div className="absolute top-4 right-4 w-16 h-16 border-t-4 border-r-4 border-rose-500"></div>
+                      <div className="absolute bottom-4 left-4 w-16 h-16 border-b-4 border-l-4 border-rose-500"></div>
+                      <div className="absolute bottom-4 right-4 w-16 h-16 border-b-4 border-r-4 border-rose-500"></div>
+                      <h3 className="text-2xl font-bold tracking-widest text-stone-500 uppercase mb-8">Certificate of Participation</h3>
+                      <h1 className="text-5xl font-black text-orange-900 mb-12">{event.title}</h1>
+                      <p className="text-2xl text-stone-700 mb-4">This is proudly presented to acknowledge the successful participation and attendance at our event.</p>
+                      <p className="text-xl text-stone-500 mb-16">Hosted on <strong>{new Date(event.date).toLocaleDateString()}</strong> at <strong>{event.venue}</strong></p>
                     </div>
                   </div>
 

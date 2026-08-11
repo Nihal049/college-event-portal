@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 const CreateEvent = () => {
   const [formData, setFormData] = useState({
@@ -9,7 +10,6 @@ const CreateEvent = () => {
     date: '',
     venue: '',
     seatLimit: '',
-    // NEW: Timeline specific fields
     festDay: 'Day 1',
     startTime: '',
     endTime: '',
@@ -18,9 +18,15 @@ const CreateEvent = () => {
     maxTeamSize: 1,
   });
   
-  const [message, setMessage] = useState('');
-  const [isError, setIsError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  // Warm Light-Mode SweetAlert Config (Aurora Style)
+  const swalConfig = {
+    background: '#ffffff',
+    color: '#292524',
+    customClass: { popup: 'rounded-[2rem] shadow-2xl border border-orange-50 font-sans' }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,7 +34,7 @@ const CreateEvent = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
+    setIsSubmitting(true);
 
     const token = localStorage.getItem('token');
 
@@ -45,214 +51,288 @@ const CreateEvent = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage('Event created successfully!');
-        setIsError(false);
+        Swal.fire({
+          ...swalConfig,
+          title: 'System Updated',
+          text: 'Event created successfully!',
+          icon: 'success',
+          confirmButtonColor: '#f97316' // Orange-500
+        });
         setTimeout(() => navigate('/dashboard'), 1500); 
       } else {
-        setMessage(data.message || 'Failed to create event');
-        setIsError(true);
+        Swal.fire({
+          ...swalConfig,
+          title: 'Error',
+          text: data.message || 'Failed to create event',
+          icon: 'error',
+          confirmButtonColor: '#f43f5e' // Rose-500
+        });
+        setIsSubmitting(false);
       }
     } catch (error) {
-      setMessage('Cannot connect to server.');
-      setIsError(true);
+      Swal.fire({
+        ...swalConfig,
+        title: 'Connection Error',
+        text: 'Cannot connect to server.',
+        icon: 'error',
+        confirmButtonColor: '#f43f5e'
+      });
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-        <h2 className="text-3xl font-extrabold text-gray-900 mb-6">Create New Event</h2>
+    <div className="min-h-screen flex items-center justify-center bg-[#fff8f6] py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-sans selection:bg-orange-500/20">
+      
+      {/* --- AURORA AMBIENT BACKGROUND BLOBS --- */}
+      <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-rose-300/40 rounded-full blur-[120px] pointer-events-none mix-blend-multiply"></div>
+      <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-orange-300/40 rounded-full blur-[120px] pointer-events-none mix-blend-multiply"></div>
+      
+      <div className="max-w-4xl w-full relative z-10">
         
-        {message && (
-          <div className={`mb-6 p-4 rounded-md text-sm font-medium ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-            {message}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Event Title</label>
-            <input
-              name="title"
-              type="text"
-              required
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              value={formData.title}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Description</label>
-            <textarea
-              name="description"
-              required
-              rows="4"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              value={formData.description}
-              onChange={handleChange}
-            ></textarea>
+        {/* --- MAIN AURORA GLASS CARD --- */}
+        <div className="bg-white/60 backdrop-blur-xl p-8 sm:p-12 rounded-[2.5rem] shadow-xl shadow-rose-900/5 border border-white relative overflow-hidden">
+          
+          {/* Header Section */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 border-b border-white/60 pb-6 relative z-10 gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm border bg-orange-50 text-orange-600 border-orange-100 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+                Admin Authorization
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black text-stone-800 leading-tight tracking-tight">
+                Initialize Event
+              </h1>
+            </div>
+            <Link to="/dashboard" className="group flex items-center gap-2 bg-white/80 hover:bg-white border border-white text-stone-600 px-5 py-2.5 rounded-xl font-bold transition-all duration-300 shadow-sm transform hover:-translate-y-0.5 active:scale-95">
+              <span className="text-xl group-hover:-translate-x-1 transition-transform text-stone-400">←</span>
+              Abort
+            </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Category</label>
-              <select
-                name="category"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={formData.category}
-                onChange={handleChange}
-              >
-                <option value="College Fest">College Fest</option>
-                <option value="Workshop">Workshop</option>
-                <option value="Hackathon">Hackathon</option>
-                <option value="Seminar">Seminar</option>
-                <option value="Sports">Sports</option>
-                <option value="Cultural">Cultural</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Date</label>
-              <input
-                name="date"
-                type="datetime-local"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={formData.date}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Venue</label>
-              <input
-                name="venue"
-                type="text"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={formData.venue}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Seat Limit (Overall)</label>
-              <input
-                name="seatLimit"
-                type="number"
-                required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={formData.seatLimit}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          {/* NEW TIMELINE INPUTS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Fest Day</label>
-              <select
-                name="festDay"
-                value={formData.festDay}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              >
-                <option value="Day 1">Day 1</option>
-                <option value="Day 2">Day 2</option>
-                <option value="Day 3">Day 3</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Start Time</label>
-              <input
-                type="text"
-                name="startTime"
-                placeholder="e.g. 10:00 AM"
-                value={formData.startTime}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">End Time</label>
-              <input
-                type="text"
-                name="endTime"
-                placeholder="e.g. 02:00 PM"
-                value={formData.endTime}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Special Feature Toggles */}
-          <div className="space-y-4 pt-2">
+          <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
             
-            <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg border border-purple-100">
-              <input
-                type="checkbox"
-                id="accommodation"
-                checked={formData.offersAccommodation}
-                onChange={(e) => setFormData({ ...formData, offersAccommodation: e.target.checked })}
-                className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 border-gray-300 cursor-pointer"
-              />
-              <label htmlFor="accommodation" className="text-sm font-medium text-purple-900 cursor-pointer">
-                Provide Overnight Hostel Accommodation for this event
-              </label>
+            {/* Top Row: Title & Category */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">Event Title</label>
+                <input
+                  name="title"
+                  type="text"
+                  required
+                  className="block w-full px-4 py-3.5 bg-white/50 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none placeholder-stone-400 shadow-inner"
+                  placeholder="e.g. Annual Tech Symposium"
+                  value={formData.title}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">Category</label>
+                <select
+                  name="category"
+                  className="block w-full px-4 py-3.5 bg-white/50 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none cursor-pointer shadow-inner"
+                  value={formData.category}
+                  onChange={handleChange}
+                >
+                  <option value="College Fest">College Fest</option>
+                  <option value="Workshop">Workshop</option>
+                  <option value="Hackathon">Hackathon</option>
+                  <option value="Seminar">Seminar</option>
+                  <option value="Sports">Sports</option>
+                  <option value="Cultural">Cultural</option>
+                </select>
+              </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-100 gap-4">
-              <div className="flex items-center gap-3">
+            {/* Full Width: Description */}
+            <div>
+              <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">Description</label>
+              <textarea
+                name="description"
+                required
+                rows="3"
+                className="block w-full px-4 py-3.5 bg-white/50 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-medium text-stone-800 outline-none placeholder-stone-400 resize-none shadow-inner"
+                placeholder="Detail the event objectives and highlights..."
+                value={formData.description}
+                onChange={handleChange}
+              ></textarea>
+            </div>
+
+            {/* Logistics Row: Venue, Date, Capacity */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-white/50 rounded-2xl border border-white shadow-sm">
+              <div>
+                <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">Venue</label>
+                <input
+                  name="venue"
+                  type="text"
+                  required
+                  className="block w-full px-4 py-3.5 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none placeholder-stone-400 shadow-inner"
+                  placeholder="e.g. Main Auditorium"
+                  value={formData.venue}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">Date & Time</label>
+                <input
+                  name="date"
+                  type="datetime-local"
+                  required
+                  className="block w-full px-4 py-3.5 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none shadow-inner"
+                  value={formData.date}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">Seat Capacity</label>
+                <input
+                  name="seatLimit"
+                  type="number"
+                  required
+                  min="1"
+                  className="block w-full px-4 py-3.5 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none placeholder-stone-400 shadow-inner"
+                  placeholder="e.g. 500"
+                  value={formData.seatLimit}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            {/* --- TIMELINE SCHEDULE PANEL --- */}
+            <div>
+              <h3 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span className="text-lg drop-shadow-sm">⏱️</span> Schedule Configuration
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-white/50 rounded-2xl border border-white shadow-sm">
+                <div>
+                  <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">Fest Day</label>
+                  <select
+                    name="festDay"
+                    value={formData.festDay}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3.5 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none cursor-pointer shadow-inner"
+                  >
+                    <option value="Day 1">Day 1</option>
+                    <option value="Day 2">Day 2</option>
+                    <option value="Day 3">Day 3</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">Start Time</label>
+                  <input
+                    type="text"
+                    name="startTime"
+                    placeholder="e.g. 10:00 AM"
+                    value={formData.startTime}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3.5 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none placeholder-stone-400 shadow-inner"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">End Time</label>
+                  <input
+                    type="text"
+                    name="endTime"
+                    placeholder="e.g. 02:00 PM"
+                    value={formData.endTime}
+                    onChange={handleChange}
+                    className="block w-full px-4 py-3.5 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none placeholder-stone-400 shadow-inner"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* --- ADVANCED PROTOCOLS (Accommodation & Teams) --- */}
+            <div className="space-y-4">
+              
+              {/* Accommodation Toggle */}
+              <div className={`flex items-center gap-4 p-5 rounded-2xl border transition-all shadow-sm ${
+                formData.offersAccommodation 
+                  ? 'bg-rose-50 border-rose-100' 
+                  : 'bg-white/60 border-white opacity-80 hover:opacity-100'
+              }`}>
                 <input
                   type="checkbox"
-                  id="allowTeams"
-                  checked={formData.allowTeams}
-                  onChange={(e) => setFormData({ ...formData, allowTeams: e.target.checked })}
-                  className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300 cursor-pointer"
+                  id="accommodation"
+                  checked={formData.offersAccommodation}
+                  onChange={(e) => setFormData({ ...formData, offersAccommodation: e.target.checked })}
+                  className="w-6 h-6 bg-white border border-stone-200 rounded cursor-pointer accent-rose-500"
                 />
-                <label htmlFor="allowTeams" className="text-sm font-medium text-blue-900 cursor-pointer">
-                  Enable Team/Group Registrations
+                <label htmlFor="accommodation" className={`text-sm font-bold cursor-pointer ${formData.offersAccommodation ? 'text-rose-600' : 'text-stone-500'}`}>
+                  Enable Hostel Accommodation Requests (Multi-day events)
                 </label>
               </div>
 
-              {formData.allowTeams && (
-                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-md border border-blue-200 shadow-sm">
-                  <label className="text-sm font-bold text-blue-900 whitespace-nowrap">Max Size:</label>
+              {/* Teams Toggle */}
+              <div className={`flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-2xl border transition-all shadow-sm gap-4 ${
+                formData.allowTeams 
+                  ? 'bg-orange-50 border-orange-100' 
+                  : 'bg-white/60 border-white opacity-80 hover:opacity-100'
+              }`}>
+                <div className="flex items-center gap-4">
                   <input
-                    name="maxTeamSize"
-                    type="number"
-                    min="2"
-                    max="100"
-                    required
-                    className="w-16 px-2 py-1 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-center font-bold"
-                    value={formData.maxTeamSize}
-                    onChange={handleChange}
+                    type="checkbox"
+                    id="allowTeams"
+                    checked={formData.allowTeams}
+                    onChange={(e) => setFormData({ ...formData, allowTeams: e.target.checked })}
+                    className="w-6 h-6 bg-white border border-stone-200 rounded cursor-pointer accent-orange-500"
                   />
+                  <label htmlFor="allowTeams" className={`text-sm font-bold cursor-pointer ${formData.allowTeams ? 'text-orange-600' : 'text-stone-500'}`}>
+                    Enable Team/Group Registrations
+                  </label>
                 </div>
-              )}
+
+                {formData.allowTeams && (
+                  <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl border border-orange-100 shadow-sm">
+                    <label className="text-[10px] font-black text-orange-500 uppercase tracking-widest whitespace-nowrap">Max Size</label>
+                    <input
+                      name="maxTeamSize"
+                      type="number"
+                      min="2"
+                      max="100"
+                      required
+                      className="w-16 bg-transparent text-stone-800 font-black text-center outline-none border-b border-orange-200 focus:border-orange-500 transition-colors"
+                      value={formData.maxTeamSize}
+                      onChange={handleChange}
+                    />
+                  </div>
+                )}
+              </div>
+
             </div>
 
-          </div>
-
-          <div className="pt-4 flex gap-4">
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard')}
-              className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 font-medium py-2.5 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md"
-            >
-              Create Event
-            </button>
-          </div>
-        </form>
+            {/* --- ACTION BUTTONS --- */}
+            <div className="pt-6 flex flex-col sm:flex-row gap-4 border-t border-white/60">
+              <Link
+                to="/dashboard"
+                className="w-full sm:w-1/3 flex justify-center items-center py-4 bg-white/80 hover:bg-white border border-white rounded-xl text-stone-600 font-black text-sm uppercase tracking-widest transition-all shadow-sm active:scale-95"
+              >
+                Discard
+              </Link>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`w-full sm:w-2/3 flex justify-center items-center py-4 rounded-xl text-white font-black text-sm uppercase tracking-widest shadow-lg transform transition-all ${
+                  isSubmitting 
+                    ? 'bg-stone-200 border border-stone-200 text-stone-400 cursor-not-allowed shadow-none' 
+                    : 'bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 shadow-rose-500/25 hover:-translate-y-0.5 active:scale-95'
+                }`}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-3">
+                    <div className="w-4 h-4 border-2 border-stone-400/30 border-t-stone-400 rounded-full animate-spin"></div>
+                    Deploying...
+                  </span>
+                ) : (
+                  'Deploy Event Protocol'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
