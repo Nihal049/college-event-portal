@@ -13,16 +13,22 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 
-// 3. Initialize Socket.io with CORS
+// 3. CRITICAL FIX: Initialize Socket.io with production CORS & Transports
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Make sure this matches your frontend port
-    methods: ["GET", "POST"]
-  }
+    origin: "*", // Allows connections from anywhere (Localhost, Vercel, Render, etc.)
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  transports: ['websocket', 'polling'] // Forces WebSockets for Render compatibility
 });
 
-// 4. Standard Middlewares
-app.use(cors());
+// 4. CRITICAL FIX: Standard Middlewares updated for production CORS
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.use(express.json());
 
 // 5. Inject 'io' into req so controllers can access it
