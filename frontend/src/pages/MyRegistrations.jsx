@@ -9,53 +9,51 @@ const MyRegistrations = () => {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
 
-  // Warm Light-Mode SweetAlert Config (Aurora Style)
+  // Warm Light-Mode SweetAlert Config
   const swalConfig = {
     background: '#ffffff',
     color: '#292524',
     customClass: { popup: 'rounded-[2rem] shadow-2xl border border-orange-50 font-sans' }
   };
 
+  const fetchMyEvents = async (token) => {
+    try {
+      const response = await fetch('https://college-event-portal-a0d1.onrender.com/api/events/my-registrations', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        const eventsWithTeams = await Promise.all(data.map(async (event) => {
+          if (event.allowTeams) {
+            const teamRes = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${event._id}/team`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const teamData = await teamRes.json();
+            return { ...event, myTeam: teamData };
+          }
+          return event;
+        }));
+        setEvents(eventsWithTeams);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching registrations:', error);
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('token');
-    
     if (token) {
       try {
         const decoded = JSON.parse(atob(token.split('.')[1]));
         setUserId(decoded.id);
+        fetchMyEvents(token);
       } catch (e) {
         console.error("Invalid token");
       }
     }
-    
-    const fetchMyEvents = async () => {
-      try {
-        const response = await fetch('https://college-event-portal-a0d1.onrender.com/api/events/my-registrations', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        
-        if (response.ok) {
-          const eventsWithTeams = await Promise.all(data.map(async (event) => {
-            if (event.allowTeams) {
-              const teamRes = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${event._id}/team`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-              });
-              const teamData = await teamRes.json();
-              return { ...event, myTeam: teamData };
-            }
-            return event;
-          }));
-          setEvents(eventsWithTeams);
-        }
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching registrations:', error);
-        setLoading(false);
-      }
-    };
-
-    fetchMyEvents();
   }, []);
 
   const handleCancel = async (eventId) => {
@@ -80,48 +78,82 @@ const MyRegistrations = () => {
       });
 
       if (response.ok) {
-        Swal.fire({
-          ...swalConfig,
-          title: 'Cancelled!',
-          text: 'Registration cancelled successfully.',
-          icon: 'success',
-          confirmButtonColor: '#f97316'
-        });
+        Swal.fire({ ...swalConfig, title: 'Cancelled!', text: 'Registration cancelled successfully.', icon: 'success', confirmButtonColor: '#f97316' });
         setEvents(events.filter(event => event._id !== eventId));
       } else {
         const data = await response.json();
-        Swal.fire({
-          ...swalConfig,
-          title: 'Error',
-          text: data.message,
-          icon: 'error',
-          confirmButtonColor: '#f43f5e'
-        });
+        Swal.fire({ ...swalConfig, title: 'Error', text: data.message, icon: 'error', confirmButtonColor: '#f43f5e' });
       }
     } catch (error) {
-      Swal.fire({
-        ...swalConfig,
-        title: 'Connection Error',
-        text: 'Error connecting to server.',
-        icon: 'error',
-        confirmButtonColor: '#f43f5e'
-      });
+      Swal.fire({ ...swalConfig, title: 'Connection Error', text: 'Error connecting to server.', icon: 'error', confirmButtonColor: '#f43f5e' });
+    }
+  };
+
+  // --- NEW: FEEDBACK SUBMISSION LOGIC ---
+  const handleFeedback = async (eventId) => {
+    const { value: formValues } = await Swal.fire({
+      ...swalConfig,
+      title: 'Rate Your Experience',
+      html: `
+        <div class="text-left mb-2 mt-4 text-stone-500 font-bold text-xs uppercase tracking-widest">Rating</div>
+        <select id="swal-rating" class="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl outline-none mb-4 font-bold text-stone-800 shadow-inner focus:ring-2 focus:ring-orange-400">
+          <option value="5">⭐⭐⭐⭐⭐ (5/5) Incredible</option>
+          <option value="4">⭐⭐⭐⭐ (4/5) Great</option>
+          <option value="3">⭐⭐⭐ (3/5) Good</option>
+          <option value="2">⭐⭐ (2/5) Okay</option>
+          <option value="1">⭐ (1/5) Disappointing</option>
+        </select>
+        <div class="text-left mb-2 text-stone-500 font-bold text-xs uppercase tracking-widest">Your Review</div>
+        <textarea id="swal-comment" class="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl outline-none resize-none font-medium text-stone-800 shadow-inner focus:ring-2 focus:ring-orange-400" rows="3" placeholder="What did you think of the event?"></textarea>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Submit Review',
+      confirmButtonColor: '#f97316',
+      cancelButtonColor: '#a8a29e',
+      preConfirm: () => {
+        return {
+          rating: document.getElementById('swal-rating').value,
+          comment: document.getElementById('swal-comment').value
+        }
+      }
+    });
+
+    if (formValues) {
+      if(!formValues.comment.trim()) {
+         return Swal.fire({...swalConfig, icon:'warning', title:'Review Empty', text:'Please write a short review.', confirmButtonColor: '#f59e0b'});
+      }
+      
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/feedback`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(formValues)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          Swal.fire({ ...swalConfig, title: 'Thank You!', text: data.message, icon: 'success', confirmButtonColor: '#10b981' });
+          fetchMyEvents(token); // Refresh so the "Leave Feedback" button disappears!
+        } else {
+          Swal.fire({ ...swalConfig, title: 'Oops', text: data.message, icon: 'error', confirmButtonColor: '#f43f5e' });
+        }
+      } catch(e) {
+        Swal.fire({ ...swalConfig, title: 'Connection Error', text: 'Cannot connect to server.', icon: 'error', confirmButtonColor: '#f43f5e' });
+      }
     }
   };
 
   const downloadTicket = (eventId, eventTitle) => {
     const element = document.getElementById(`ticket-${eventId}`);
     const actionButtons = document.getElementById(`actions-${eventId}`);
-    
     if (actionButtons) actionButtons.style.display = 'none';
 
     const opt = {
-      margin: 0.5, 
-      filename: `${eventTitle.replace(/\s+/g, '_')}_Ticket.pdf`,
-      image: { type: 'jpeg', quality: 0.98 }, 
-      // Set the background color to white to match the light theme PDF export
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+      margin: 0.5, filename: `${eventTitle.replace(/\s+/g, '_')}_Ticket.pdf`, image: { type: 'jpeg', quality: 0.98 }, 
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' }, jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
     };
     
     html2pdf().set(opt).from(element).save().then(() => {
@@ -132,11 +164,8 @@ const MyRegistrations = () => {
   const downloadCertificate = (eventId, eventTitle) => {
     const element = document.getElementById(`cert-${eventId}`);
     const opt = {
-      margin: 0, 
-      filename: `${eventTitle.replace(/\s+/g, '_')}_Certificate.pdf`,
-      image: { type: 'jpeg', quality: 1 }, 
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+      margin: 0, filename: `${eventTitle.replace(/\s+/g, '_')}_Certificate.pdf`, image: { type: 'jpeg', quality: 1 }, 
+      html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
     };
     html2pdf().set(opt).from(element).save();
   };
@@ -153,13 +182,11 @@ const MyRegistrations = () => {
   return (
     <div className="min-h-screen bg-[#fff8f6] py-12 px-4 sm:px-6 lg:px-8 font-sans relative overflow-hidden selection:bg-orange-500/20 text-stone-800">
       
-      {/* --- AURORA AMBIENT BACKGROUND BLOBS --- */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-rose-300/40 rounded-full blur-[100px] pointer-events-none mix-blend-multiply"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-orange-300/40 rounded-full blur-[100px] pointer-events-none mix-blend-multiply"></div>
 
       <div className="max-w-6xl mx-auto relative z-10">
         
-        {/* --- AURORA HEADER --- */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6 bg-white/60 backdrop-blur-xl p-6 md:p-8 rounded-[2rem] shadow-xl shadow-rose-900/5 border border-white">
           <div>
             <h1 className="text-4xl md:text-5xl font-black text-stone-800 pb-2 tracking-tight">
@@ -178,9 +205,7 @@ const MyRegistrations = () => {
 
         {events.length === 0 ? (
           <div className="bg-white/60 backdrop-blur-xl p-16 rounded-[2.5rem] border border-dashed border-stone-300 hover:border-orange-400 transition-colors text-center flex flex-col items-center justify-center shadow-xl shadow-rose-900/5">
-            <div className="w-24 h-24 bg-white border border-white rounded-full flex items-center justify-center shadow-sm mb-6 text-5xl">
-              🎫
-            </div>
+            <div className="w-24 h-24 bg-white border border-white rounded-full flex items-center justify-center shadow-sm mb-6 text-5xl">🎫</div>
             <h2 className="text-3xl font-black text-stone-800 mb-3 tracking-tight">Your wallet is empty</h2>
             <p className="text-stone-500 font-medium text-lg mb-8 max-w-md">You haven't encrypted any event passes yet. Browse the network and secure your spot!</p>
             <Link to="/dashboard" className="bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 text-white px-8 py-4 rounded-2xl font-black text-lg shadow-lg shadow-rose-500/25 transition-all duration-300 transform hover:-translate-y-1 active:scale-95">
@@ -194,14 +219,18 @@ const MyRegistrations = () => {
               const myAccommodation = event.accommodationRequests?.find(req => req.student === userId || (req.student && req.student._id === userId));
               const isCheckedIn = event.checkedInUsers?.includes(userId);
               const team = event.myTeam;
+              
+              const eventDate = new Date(event.date);
+              const now = new Date();
+              const isExpired = eventDate.getTime() + (24 * 60 * 60 * 1000) < now.getTime();
+              
+              // Verify if user already submitted feedback
+              const hasLeftFeedback = event.feedbacks?.some(f => f.student === userId || (f.student && f.student._id === userId));
 
               return (
                 <div key={event._id} className="relative group perspective-1000">
                   
-                  {/* --- THE TICKET DESIGN --- */}
                   <div id={`ticket-${event._id}`} className="bg-white/70 backdrop-blur-3xl rounded-[2.5rem] shadow-xl shadow-rose-900/5 group-hover:shadow-2xl group-hover:shadow-rose-900/10 transition-all duration-500 transform group-hover:-translate-y-2 border border-white group-hover:border-orange-200 flex flex-col md:flex-row overflow-hidden relative">
-                    
-                    {/* Decorative glowing blob behind the info */}
                     <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-orange-400/20 to-rose-400/20 rounded-full blur-3xl opacity-50 -mr-20 -mt-20 pointer-events-none transition-opacity group-hover:opacity-100"></div>
 
                     {/* Left Side: Information */}
@@ -213,22 +242,13 @@ const MyRegistrations = () => {
                           </span>
                         </div>
                         
-                        <h2 className="text-2xl font-black text-stone-800 leading-tight mb-4 group-hover:text-orange-600 transition-colors tracking-tight">
-                          {event.title}
-                        </h2>
+                        <h2 className="text-2xl font-black text-stone-800 leading-tight mb-4 group-hover:text-orange-600 transition-colors tracking-tight">{event.title}</h2>
                         
                         <div className="flex flex-col gap-2 bg-white/50 backdrop-blur-md p-4 rounded-2xl border border-white">
-                          <p className="flex items-center text-stone-600 font-bold text-sm">
-                            <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-white mr-3 text-base shadow-sm">📍</span> 
-                            {event.venue}
-                          </p>
-                          <p className="flex items-center text-stone-600 font-bold text-sm">
-                            <span className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-white mr-3 text-base shadow-sm">📅</span> 
-                            {new Date(event.date).toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}
-                          </p>
+                          <p className="flex items-center text-stone-600 font-bold text-sm"><span className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-white mr-3 text-base shadow-sm">📍</span> {event.venue}</p>
+                          <p className="flex items-center text-stone-600 font-bold text-sm"><span className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-white mr-3 text-base shadow-sm">📅</span> {new Date(event.date).toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}</p>
                         </div>
 
-                        {/* Team Info Section */}
                         {team && (
                           <div className="mt-5 p-5 bg-white/60 border border-white rounded-2xl relative overflow-hidden shadow-sm">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-rose-300/30 rounded-full blur-xl -mr-10 -mt-10"></div>
@@ -246,32 +266,19 @@ const MyRegistrations = () => {
                             <div className="space-y-1.5 mt-2 relative z-10">
                               <p className="text-sm text-stone-700 font-bold"><span className="font-bold mr-1">👑</span> {team.captain?.name} <span className="text-rose-400 text-[10px] uppercase tracking-widest ml-1">(Captain)</span></p>
                               {team.members?.map((member, idx) => (
-                                <p key={idx} className="text-sm text-stone-500 font-bold ml-6 flex items-center gap-2">
-                                  <span className="w-1.5 h-1.5 bg-orange-400 rounded-full"></span> {member.name}
-                                </p>
+                                <p key={idx} className="text-sm text-stone-500 font-bold ml-6 flex items-center gap-2"><span className="w-1.5 h-1.5 bg-orange-400 rounded-full"></span> {member.name}</p>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {/* Hostel Accommodation */}
                         {myAccommodation && (
                           <div className={`mt-5 p-4 rounded-2xl border bg-white/80 shadow-sm flex items-center justify-between ${myAccommodation.status === 'Approved' ? 'border-emerald-100' : 'border-orange-100'}`}>
                             <div>
-                              <p className={`text-[10px] font-black uppercase tracking-widest mb-0.5 ${myAccommodation.status === 'Approved' ? 'text-emerald-500' : 'text-orange-500'}`}>
-                                🛏️ Accommodation
-                              </p>
-                              {myAccommodation.status === 'Approved' ? (
-                                <p className="text-lg font-black text-stone-800">Room <span className="text-emerald-500">{myAccommodation.assignedRoom}</span></p>
-                              ) : (
-                                <p className="text-sm font-bold text-orange-500">Pending Approval</p>
-                              )}
+                              <p className={`text-[10px] font-black uppercase tracking-widest mb-0.5 ${myAccommodation.status === 'Approved' ? 'text-emerald-500' : 'text-orange-500'}`}>🛏️ Accommodation</p>
+                              {myAccommodation.status === 'Approved' ? <p className="text-lg font-black text-stone-800">Room <span className="text-emerald-500">{myAccommodation.assignedRoom}</span></p> : <p className="text-sm font-bold text-orange-500">Pending Approval</p>}
                             </div>
-                            {myAccommodation.status === 'Approved' && (
-                              <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center border border-emerald-100">
-                                <span className="text-emerald-500 text-xl">✓</span>
-                              </div>
-                            )}
+                            {myAccommodation.status === 'Approved' && <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center border border-emerald-100"><span className="text-emerald-500 text-xl">✓</span></div>}
                           </div>
                         )}
                       </div>
@@ -279,8 +286,6 @@ const MyRegistrations = () => {
 
                     {/* Right Side: QR Code Stub */}
                     <div className="p-8 md:w-72 shrink-0 bg-white/40 border-t-2 md:border-t-0 md:border-l-2 border-dashed border-stone-200 flex flex-col items-center justify-center relative backdrop-blur-md">
-                      
-                      {/* Ticket "Cutouts" - Desktop only to look like a punched stub */}
                       <div className="hidden md:block absolute -left-[17px] top-[-1px] w-8 h-8 bg-[#fff8f6] rounded-full border-b border-r border-stone-200"></div>
                       <div className="hidden md:block absolute -left-[17px] bottom-[-1px] w-8 h-8 bg-[#fff8f6] rounded-full border-t border-r border-stone-200"></div>
 
@@ -291,9 +296,14 @@ const MyRegistrations = () => {
                           </div>
                           <p className="text-xs font-black text-emerald-600 uppercase tracking-widest">Access Granted</p>
                         </div>
+                      ) : isExpired ? (
+                        <div className="text-center w-full bg-stone-100/80 p-6 rounded-3xl border border-stone-200 mb-4 shadow-sm grayscale opacity-80">
+                          <div className="bg-stone-300 text-stone-500 p-4 rounded-full inline-block mb-3 shadow-inner"><span className="text-3xl block">⏳</span></div>
+                          <p className="text-xs font-black text-stone-500 uppercase tracking-widest">Event Ended</p>
+                          <p className="text-[10px] font-bold text-stone-400 mt-1 uppercase">Not Attended</p>
+                        </div>
                       ) : (
                         <div className="text-center mb-6 w-full flex flex-col items-center">
-                          {/* QR Code container stays white for scanner readability */}
                           <div className="bg-white p-3.5 rounded-3xl shadow-sm border-2 border-white group-hover:border-orange-300 transition-colors duration-500">
                             <QRCodeSVG value={qrData} size={128} level="H" includeMargin={false} fgColor="#292524" />
                           </div>
@@ -304,8 +314,20 @@ const MyRegistrations = () => {
                       {/* Action Buttons */}
                       <div id={`actions-${event._id}`} className="mt-auto w-full space-y-3">
                         {isCheckedIn ? (
-                          <button onClick={() => downloadCertificate(event._id, event.title)} className="w-full bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-white text-sm font-black py-3.5 px-4 rounded-xl shadow-md shadow-orange-500/20 transform hover:-translate-y-0.5 transition-all">
-                            🎓 Get Certificate
+                          <>
+                            <button onClick={() => downloadCertificate(event._id, event.title)} className="w-full bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-white text-sm font-black py-3.5 px-4 rounded-xl shadow-md shadow-orange-500/20 transform hover:-translate-y-0.5 transition-all mb-2">
+                              🎓 Get Certificate
+                            </button>
+                            {/* NEW: Feedback Button unlocks only if they checked in and haven't reviewed yet! */}
+                            {!hasLeftFeedback && (
+                              <button onClick={() => handleFeedback(event._id)} className="w-full bg-white hover:bg-stone-50 text-stone-600 border border-stone-200 text-xs font-bold py-3 px-4 rounded-xl transition-all shadow-sm active:scale-95">
+                                ⭐ Leave Feedback
+                              </button>
+                            )}
+                          </>
+                        ) : isExpired ? (
+                          <button disabled className="w-full bg-stone-100 text-stone-400 text-sm font-black py-3.5 px-4 rounded-xl border border-stone-200 cursor-not-allowed">
+                            Ticket Expired
                           </button>
                         ) : (
                           <>
@@ -322,7 +344,7 @@ const MyRegistrations = () => {
 
                   </div>
                   
-                  {/* HIDDEN CERTIFICATE TEMPLATE - Do not edit classes inside here as html2pdf needs standard styling */}
+                  {/* HIDDEN CERTIFICATE */}
                   <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
                     <div id={`cert-${event._id}`} className="w-[1056px] h-[816px] bg-white p-12 relative flex flex-col items-center justify-center text-center font-serif border-[16px] border-double border-orange-900">
                       <div className="absolute top-4 left-4 w-16 h-16 border-t-4 border-l-4 border-rose-500"></div>

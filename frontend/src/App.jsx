@@ -12,6 +12,7 @@ import AdminEventDetails from './pages/AdminEventDetails'; // <-- Make sure this
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import MySchedule from './pages/MySchedule';
+import AdminAnalytics from './pages/AdminAnalytics';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/admin/event/:id" element={<AdminEventDetails />} />
         <Route path="/admin/broadcast" element={<BroadcastManager />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/analytics" element={<AdminAnalytics />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/my-schedule" element={<MySchedule />} /><Route path="/schedule" element={<MySchedule />} />     
       </Routes>

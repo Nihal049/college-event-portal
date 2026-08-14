@@ -234,7 +234,7 @@ const AdminEventDetails = () => {
                               });
                               if (res.ok) {
                                 const updatedEvent = await res.json();
-                                setEvent(updatedEvent); // instantly updates UI
+                                setEvent(updatedEvent); 
                               }
                             } catch (err) {
                               alert("Error assigning room");

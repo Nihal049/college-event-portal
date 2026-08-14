@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  // Inside your User Schema
+
   email: {
     type: String,
     required: true,
@@ -32,7 +32,7 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Event'
   }],
-  // --------------------------
+
   participationHistory: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Event'

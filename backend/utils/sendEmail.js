@@ -5,7 +5,7 @@ const sendEmail = async (options) => {
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     const data = await resend.emails.send({
-      from: 'onboarding@resend.dev', // Resend's default testing address
+      from: 'onboarding@resend.dev',
       to: options.email,
       subject: options.subject,
       text: options.message,

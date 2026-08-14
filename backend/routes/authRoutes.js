@@ -12,7 +12,7 @@ const {
 const { protect } = require('../middlewares/authMiddleware');
 
 router.post('/register', registerUser);
-router.post('/login', loginUser); // Removed the duplicate loginController line
+router.post('/login', loginUser); 
 router.get('/profile', protect, getUserProfile);
 router.put('/update-password', protect, updatePassword);
 router.put('/update-profile', protect, updateProfile);

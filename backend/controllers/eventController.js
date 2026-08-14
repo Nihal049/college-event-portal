@@ -12,9 +12,6 @@ const getEvents = async (req, res) => {
   }
 };
 
-// @desc    Create a new event
-// @route   POST /api/events
-// @access  Private (Admin only)
 const createEvent = async (req, res) => {
   try {
     const { 
@@ -24,19 +21,9 @@ const createEvent = async (req, res) => {
     } = req.body;
 
     const event = await Event.create({
-      title,
-      description,
-      category,
-      date,
-      venue,
-      seatLimit,
-      offersAccommodation,
-      allowTeams,
-      maxTeamSize,
-      festDay, 
-      startTime, 
-      endTime,
-      organizer: req.user.id
+      title, description, category, date, venue, seatLimit, 
+      offersAccommodation, allowTeams, maxTeamSize, festDay, 
+      startTime, endTime, organizer: req.user.id
     });
 
     res.status(201).json({ message: 'Event created successfully', event });
@@ -45,17 +32,12 @@ const createEvent = async (req, res) => {
   }
 };
 
-// @desc    Register for an event
-// @route   POST /api/events/:id/register
-// @access  Private
 const registerForEvent = async (req, res) => {
   try {
     const { requestAccommodation } = req.body;
     const event = await Event.findById(req.params.id);
 
-    if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
-    }
+    if (!event) return res.status(404).json({ message: 'Event not found' });
 
     if (event.registeredUsers && event.registeredUsers.includes(req.user.id)) {
       return res.status(400).json({ message: 'You are already registered for this event!' });
@@ -92,15 +74,10 @@ const registerForEvent = async (req, res) => {
       }
     }
 
-    await Event.findByIdAndUpdate(
-      req.params.id,
-      updateOps,
-      { new: true, runValidators: false }
-    );
+    await Event.findByIdAndUpdate(req.params.id, updateOps, { new: true, runValidators: false });
 
     try {
       const user = await User.findById(req.user.id);
-      
       const emailHTML = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
           <h2 style="color: #2563eb;">Registration Confirmed! 🎉</h2>
@@ -115,15 +92,8 @@ const registerForEvent = async (req, res) => {
           <p style="color: #64748b; font-size: 12px;">This is an automated message from the Event Portal.</p>
         </div>
       `;
-
-      sendEmail({
-        email: user.email,
-        subject: `Ticket Confirmed: ${event.title}`,
-        html: emailHTML
-      }).catch(emailError => {
-        console.error('Background email failed:', emailError);
-      });
-
+      sendEmail({ email: user.email, subject: `Ticket Confirmed: ${event.title}`, html: emailHTML })
+        .catch(err => console.error('Email failed:', err));
     } catch (error) {
       console.error('Error preparing email:', error);
     }
@@ -170,16 +140,15 @@ const getAdminEventDetails = async (req, res) => {
     const event = await Event.findById(req.params.id)
       .populate('registeredUsers', 'name email rollNumber')
       .populate('checkedInUsers', 'name email rollNumber')
-      .populate('accommodationRequests.student', 'name email rollNumber'); 
+      .populate('accommodationRequests.student', 'name email rollNumber')
+      .populate('feedbacks.student', 'name email rollNumber'); 
       
     if (!event) return res.status(404).json({ message: 'Event not found' });
     
-    // NEW: Fetch all teams associated with this event and populate their members
     const teams = await Team.find({ event: req.params.id })
       .populate('captain', 'name email rollNumber')
       .populate('members', 'name email rollNumber');
 
-    // Attach the teams to the event data before sending it to the frontend
     const eventData = event.toObject();
     eventData.teams = teams;
     
@@ -189,53 +158,34 @@ const getAdminEventDetails = async (req, res) => {
   }
 };
 
-// @desc    Delete an event
-// @route   DELETE /api/events/:id
-// @access  Private/Admin
 const deleteEvent = async (req, res) => {
   try {
     const event = await Event.findByIdAndDelete(req.params.id);
-    
-    if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
-    }
-
+    if (!event) return res.status(404).json({ message: 'Event not found' });
     res.status(200).json({ message: 'Event deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Update an event
-// @route   PUT /api/events/:id
-// @access  Private/Admin
 const updateEvent = async (req, res) => {
   try {
     const { title, description, date, venue, category, seatLimit } = req.body;
-
     const updatedEvent = await Event.findByIdAndUpdate(
       req.params.id,
       { title, description, date, venue, category, seatLimit },
       { new: true, runValidators: false }
     );
-
-    if (!updatedEvent) {
-      return res.status(404).json({ message: 'Event not found' });
-    }
-
+    if (!updatedEvent) return res.status(404).json({ message: 'Event not found' });
     res.status(200).json(updatedEvent);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Assign a room to a student for an event
-// @route   PUT /api/events/:id/assign-room
-// @access  Private/Admin
 const assignRoom = async (req, res) => {
   try {
     const { requestId, roomNumber } = req.body;
-    
     const event = await Event.findOneAndUpdate(
       { _id: req.params.id, "accommodationRequests._id": requestId },
       { 
@@ -248,27 +198,20 @@ const assignRoom = async (req, res) => {
     ).populate('accommodationRequests.student', 'name email rollNumber');
 
     if (!event) return res.status(404).json({ message: 'Event or request not found' });
-
     res.status(200).json(event);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Cancel event registration
-// @route   DELETE /api/events/:id/cancel
-// @access  Private
 const cancelRegistration = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
-
     if (!event) return res.status(404).json({ message: 'Event not found' });
-
     if (event.checkedInUsers && event.checkedInUsers.includes(req.user.id)) {
       return res.status(400).json({ message: 'Cannot cancel ticket after checking in.' });
     }
 
-    // --- NEW TEAM CLEANUP LOGIC ---
     const team = await Team.findOne({
       event: req.params.id,
       $or: [{ captain: req.user.id }, { members: req.user.id }]
@@ -276,42 +219,27 @@ const cancelRegistration = async (req, res) => {
 
     if (team) {
       if (team.captain.toString() === req.user.id) {
-        // User is the captain
         if (team.members.length > 0) {
-          // Pass the torch: Make the first member the new captain
           const newCaptain = team.members.shift();
           team.captain = newCaptain;
           await team.save();
         } else {
-          // Captain is alone, destroy the team entirely
           await Team.findByIdAndDelete(team._id);
         }
       } else {
-        // User is just a member, remove them from the array
-        team.members = team.members.filter(
-          (memberId) => memberId.toString() !== req.user.id
-        );
+        team.members = team.members.filter(memberId => memberId.toString() !== req.user.id);
         await team.save();
       }
     }
-    // ------------------------------
 
-    // Remove user from the main event registration list
-    event.registeredUsers = event.registeredUsers.filter(
-      (userId) => userId.toString() !== req.user.id
-    );
-    
-    // Remove user from accommodation requests if applicable
+    event.registeredUsers = event.registeredUsers.filter(userId => userId.toString() !== req.user.id);
     if (event.accommodationRequests) {
-      event.accommodationRequests = event.accommodationRequests.filter(
-        (request) => request.student.toString() !== req.user.id
-      );
+      event.accommodationRequests = event.accommodationRequests.filter(request => request.student.toString() !== req.user.id);
     }
 
     let promotedUserEmail = null;
     let promotedUserName = null;
 
-    // Waitlist promotion logic
     if (event.waitlistedUsers && event.waitlistedUsers.length > 0) {
       const promotedUserId = event.waitlistedUsers.shift(); 
       event.registeredUsers.push(promotedUserId);
@@ -330,7 +258,6 @@ const cancelRegistration = async (req, res) => {
 
     await event.save();
 
-    // Send email to the promoted waitlist user
     if (promotedUserEmail) {
       const emailHTML = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
@@ -350,9 +277,6 @@ const cancelRegistration = async (req, res) => {
   }
 };
 
-// @desc    Create a team for an event
-// @route   POST /api/events/:id/team
-// @access  Private
 const createTeam = async (req, res) => {
   try {
     const { teamName } = req.body;
@@ -366,19 +290,13 @@ const createTeam = async (req, res) => {
     if (event.registeredUsers.includes(userId) || event.waitlistedUsers.includes(userId)) {
       return res.status(400).json({ message: 'You are already registered or waitlisted for this event.' });
     }
-
     if (event.registeredUsers.length >= event.seatLimit) {
       return res.status(400).json({ message: 'Event is completely sold out! Cannot create a team.' });
     }
 
     const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    const team = await Team.create({
-      name: teamName,
-      event: eventId,
-      captain: userId,
-      inviteCode: inviteCode
-    });
+    const team = await Team.create({ name: teamName, event: eventId, captain: userId, inviteCode });
 
     event.registeredUsers.push(userId);
     await event.save();
@@ -389,9 +307,6 @@ const createTeam = async (req, res) => {
   }
 };
 
-// @desc    Join an existing team
-// @route   POST /api/events/:id/team/join
-// @access  Private
 const joinTeam = async (req, res) => {
   try {
     const { inviteCode } = req.body;
@@ -404,15 +319,12 @@ const joinTeam = async (req, res) => {
     if (event.registeredUsers.includes(userId) || event.waitlistedUsers.includes(userId)) {
       return res.status(400).json({ message: 'You are already registered or waitlisted.' });
     }
-
     if (event.registeredUsers.length >= event.seatLimit) {
       return res.status(400).json({ message: 'Event is completely sold out!' });
     }
 
     const team = await Team.findOne({ inviteCode: inviteCode.toUpperCase(), event: eventId });
-    if (!team) {
-      return res.status(404).json({ message: 'Invalid invite code or team not found.' });
-    }
+    if (!team) return res.status(404).json({ message: 'Invalid invite code or team not found.' });
 
     if (team.members.length + 1 >= event.maxTeamSize) {
       return res.status(400).json({ message: `This team has reached its max capacity of ${event.maxTeamSize} players!` });
@@ -430,84 +342,52 @@ const joinTeam = async (req, res) => {
   }
 };
 
-// @desc    Get user's team for a specific event
-// @route   GET /api/events/:id/team
-// @access  Private
 const getMyTeam = async (req, res) => {
   try {
-    // Find a team for this event where the user is EITHER the captain OR a member
     const team = await Team.findOne({
       event: req.params.id,
       $or: [{ captain: req.user.id }, { members: req.user.id }]
-    })
-    .populate('captain', 'name email rollNumber')
-    .populate('members', 'name email rollNumber');
-
+    }).populate('captain', 'name email rollNumber').populate('members', 'name email rollNumber');
     if (!team) return res.status(200).json(null); 
-
     res.status(200).json(team);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Broadcast a live announcement
-// @route   POST /api/events/broadcast
-// @access  Private/Admin
 const broadcastAnnouncement = async (req, res) => {
   try {
     const { title, message } = req.body;
-    if (!title || !message) {
-      return res.status(400).json({ message: 'Please provide both a title and message.' });
-    }
+    if (!title || !message) return res.status(400).json({ message: 'Please provide both a title and message.' });
 
-    // Emit the alert to ALL connected clients via WebSockets!
-    req.io.emit('receive-announcement', {
-      title,
-      message,
-      time: new Date().toLocaleTimeString()
-    });
-
+    req.io.emit('receive-announcement', { title, message, time: new Date().toLocaleTimeString() });
     res.status(200).json({ message: 'Announcement broadcasted successfully!' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Get user's bookmarked events
-// @route   GET /api/events/my-bookmarks
-// @access  Private
 const getMyBookmarks = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).populate('bookmarkedEvents');
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
     res.status(200).json(user.bookmarkedEvents);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Toggle an event bookmark for the user's itinerary
-// @route   POST /api/events/:id/bookmark
-// @access  Private
 const toggleBookmark = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     const eventId = req.params.id;
-
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Check if the event is already in the user's bookmarks
     const isBookmarked = user.bookmarkedEvents.includes(eventId);
 
     if (isBookmarked) {
-      // Remove it
-      user.bookmarkedEvents = user.bookmarkedEvents.filter(
-        (id) => id.toString() !== eventId.toString()
-      );
+      user.bookmarkedEvents = user.bookmarkedEvents.filter(id => id.toString() !== eventId.toString());
     } else {
-      // Add it
       user.bookmarkedEvents.push(eventId);
     }
 
@@ -521,21 +401,45 @@ const toggleBookmark = async (req, res) => {
   }
 };
 
+// --- NEW: FEEDBACK SUBMISSION ---
+const submitFeedback = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const event = await Event.findById(req.params.id);
+
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+
+    // Ensure the student actually attended the event before allowing a review
+    if (!event.checkedInUsers.includes(req.user.id)) {
+      return res.status(400).json({ message: 'You can only review events you actually attended.' });
+    }
+
+    // Ensure they haven't already submitted a review
+    const alreadyReviewed = event.feedbacks?.find(
+      (r) => r.student.toString() === req.user.id.toString()
+    );
+
+    if (alreadyReviewed) {
+      return res.status(400).json({ message: 'You have already submitted feedback for this event!' });
+    }
+
+    const newFeedback = {
+      student: req.user.id,
+      rating: Number(rating),
+      comment: comment
+    };
+
+    event.feedbacks.push(newFeedback);
+    await event.save();
+
+    res.status(201).json({ message: 'Thank you! Your feedback has been recorded.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
-  getEvents,
-  createEvent,
-  registerForEvent,
-  getMyRegistrations,
-  checkInUser,
-  getAdminEventDetails,
-  updateEvent,
-  assignRoom,
-  deleteEvent,
-  cancelRegistration,
-  createTeam,
-  joinTeam,
-  getMyTeam,
-  broadcastAnnouncement,
-  toggleBookmark,
-  getMyBookmarks
+  getEvents, createEvent, registerForEvent, getMyRegistrations, checkInUser, getAdminEventDetails,
+  updateEvent, assignRoom, deleteEvent, cancelRegistration, createTeam, joinTeam, getMyTeam,
+  broadcastAnnouncement, toggleBookmark, getMyBookmarks, submitFeedback
 };

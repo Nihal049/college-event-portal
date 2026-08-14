@@ -11,23 +11,21 @@ const eventSchema = mongoose.Schema(
       required: true,
     },
     date: {
-    type: Date,
-    required: true,
-  },
-  // --- NEW TIMELINE FIELDS ---
-  festDay: {
-    type: String,
-    default: 'Day 1',
-  },
-  startTime: {
-    type: String, // e.g., "10:00 AM"
-    default: "09:00 AM",
-  },
-  endTime: {
-    type: String, // e.g., "01:00 PM"
-    default: "11:00 AM",
-  },
-  // ---------------------------
+      type: Date,
+      required: true,
+    },
+    festDay: {
+      type: String,
+      default: 'Day 1',
+    },
+    startTime: {
+      type: String, 
+      default: "09:00 AM",
+    },
+    endTime: {
+      type: String,
+      default: "11:00 AM",
+    },
     venue: {
       type: String,
       required: true,
@@ -92,6 +90,29 @@ const eventSchema = mongoose.Schema(
         },
       },
     ],
+    // --- NEW: FEEDBACK SYSTEM ---
+    feedbacks: [
+      {
+        student: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+        rating: {
+          type: Number,
+          required: true,
+          min: 1,
+          max: 5
+        },
+        comment: {
+          type: String,
+          required: true
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now
+        }
+      }
+    ]
   },
   {
     timestamps: true,

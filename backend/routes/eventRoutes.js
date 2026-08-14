@@ -16,32 +16,28 @@ const {
   getMyTeam,
   broadcastAnnouncement,
   toggleBookmark,
-  getMyBookmarks
+  getMyBookmarks,
+  submitFeedback // <-- IMPORTED
 } = require('../controllers/eventController');
 
-// Import both protect AND authorize
 const { protect, authorize } = require('../middlewares/authMiddleware'); 
 
 // Public route
 router.get('/', getEvents);
 
-// ==========================================
-// 1. SPECIFIC ROUTES (Must go BEFORE /:id routes)
-// ==========================================
+// Specific routes
 router.get('/my-registrations', protect, getMyRegistrations);
 router.get('/my-bookmarks', protect, getMyBookmarks);
 router.post('/broadcast', protect, authorize('admin'), broadcastAnnouncement);
 
-// ==========================================
-// 2. PARAMETERIZED ROUTES (/:id)
-// ==========================================
-// Student Routes 
+// Student Parameterized Routes 
 router.post('/:id/register', protect, registerForEvent);
 router.delete('/:id/cancel', protect, cancelRegistration);
 router.post('/:id/team', protect, createTeam);
 router.post('/:id/team/join', protect, joinTeam);
 router.get('/:id/team', protect, getMyTeam);
 router.post('/:id/bookmark', protect, toggleBookmark);
+router.post('/:id/feedback', protect, submitFeedback); // <-- NEW FEEDBACK ROUTE
 
 // Volunteer + Admin Routes
 router.post('/:id/checkin', protect, authorize('admin', 'volunteer'), checkInUser);

@@ -9,6 +9,7 @@ const Dashboard = () => {
   const [userId, setUserId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [activeTab, setActiveTab] = useState('upcoming'); // NEW: Tab State
   const [accommodationRequests, setAccommodationRequests] = useState({});
   const [loading, setLoading] = useState(true);
   
@@ -24,7 +25,6 @@ const Dashboard = () => {
 
   const navigate = useNavigate();
 
-  // Warm Light-Mode SweetAlert Config (Aurora Style)
   const swalConfig = {
     background: '#ffffff',
     color: '#292524',
@@ -59,7 +59,10 @@ const Dashboard = () => {
     }
     fetchEvents();
 
-    const socket = io('https://college-event-portal-a0d1.onrender.com');
+    const socket = io('https://college-event-portal-a0d1.onrender.com', {
+      transports: ['websocket', 'polling'],
+      withCredentials: true
+    });
 
     socket.on('receive-announcement', (data) => {
       setAnnouncements((prev) => {
@@ -78,46 +81,42 @@ const Dashboard = () => {
     return () => socket.disconnect();
   }, []);
 
+  // --- Helpers for Dynamic Status Badges ---
+  const getEventStatus = (dateString) => {
+    const eventDate = new Date(dateString);
+    const now = new Date();
+    
+    // Strip time for "Today" comparison
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const eDate = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+
+    if (eDate.getTime() === today.getTime()) {
+      return { label: 'Live Today', color: 'text-emerald-600 bg-emerald-50 border-emerald-200', dot: 'bg-emerald-500 animate-pulse' };
+    }
+    if (eventDate.getTime() + (24 * 60 * 60 * 1000) < now.getTime()) {
+      return { label: 'Concluded', color: 'text-stone-500 bg-stone-100 border-stone-200', dot: 'bg-stone-400' };
+    }
+    return { label: 'Upcoming', color: 'text-orange-600 bg-orange-50 border-orange-200', dot: 'bg-orange-500' };
+  };
+
   const handleRegister = async (eventId, requestAccommodation = false) => {
     const token = localStorage.getItem('token');
     try {
       const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ requestAccommodation })
       });
 
       const data = await response.json();
-
       if (response.ok) {
-        Swal.fire({
-          ...swalConfig,
-          title: 'Success!',
-          text: data.message,
-          icon: 'success',
-          confirmButtonColor: '#f97316', // Orange-500
-        });
+        Swal.fire({ ...swalConfig, title: 'Success!', text: data.message, icon: 'success', confirmButtonColor: '#f97316' });
         fetchEvents();
       } else {
-        Swal.fire({
-          ...swalConfig,
-          title: 'Oops!',
-          text: data.message,
-          icon: 'error',
-          confirmButtonColor: '#f43f5e' // Rose-500
-        });
+        Swal.fire({ ...swalConfig, title: 'Oops!', text: data.message, icon: 'error', confirmButtonColor: '#f43f5e' });
       }
     } catch (error) {
-      Swal.fire({
-        ...swalConfig,
-        title: 'Connection Error',
-        text: 'Cannot connect to server.',
-        icon: 'error',
-        confirmButtonColor: '#f43f5e'
-      });
+      Swal.fire({ ...swalConfig, title: 'Connection Error', text: 'Cannot connect to server.', icon: 'error', confirmButtonColor: '#f43f5e' });
     }
   };
 
@@ -130,134 +129,56 @@ const Dashboard = () => {
       });
       const data = await response.json();
       if (response.ok) {
-        Swal.fire({
-          ...swalConfig,
-          title: 'Added to Itinerary!',
-          text: data.message,
-          icon: 'success',
-          confirmButtonColor: '#f97316',
-          timer: 2000,
-          showConfirmButton: false
-        });
+        Swal.fire({ ...swalConfig, title: 'Added to Itinerary!', text: data.message, icon: 'success', confirmButtonColor: '#f97316', timer: 2000, showConfirmButton: false });
       }
     } catch (error) {
-      Swal.fire({
-        ...swalConfig,
-        title: 'Connection Error',
-        text: 'Cannot connect to server.',
-        icon: 'error',
-        confirmButtonColor: '#f43f5e'
-      });
+      Swal.fire({ ...swalConfig, title: 'Connection Error', text: 'Cannot connect to server.', icon: 'error', confirmButtonColor: '#f43f5e' });
     }
   };
 
   const handleCreateTeam = async (eventId) => {
     const token = localStorage.getItem('token');
     const teamName = teamInput[eventId];
-
-    if (!teamName) {
-      return Swal.fire({
-        ...swalConfig,
-        title: 'Missing Information',
-        text: 'Please enter a team name!',
-        icon: 'warning',
-        confirmButtonColor: '#f59e0b'
-      });
-    }
+    if (!teamName) return Swal.fire({ ...swalConfig, title: 'Missing Information', text: 'Please enter a team name!', icon: 'warning', confirmButtonColor: '#f59e0b' });
 
     try {
       const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/team`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ teamName })
       });
-
       const data = await response.json();
-
       if (response.ok) {
-        Swal.fire({
-          ...swalConfig,
-          title: 'Team Created! 🎉',
-          text: `${data.message}\n\nMake sure to share your Invite Code with your teammates!`,
-          icon: 'success',
-          confirmButtonColor: '#f97316'
-        });
+        Swal.fire({ ...swalConfig, title: 'Team Created! 🎉', text: `${data.message}\n\nMake sure to share your Invite Code!`, icon: 'success', confirmButtonColor: '#f97316' });
         fetchEvents();
       } else {
-        Swal.fire({
-          ...swalConfig,
-          title: 'Error',
-          text: data.message,
-          icon: 'error',
-          confirmButtonColor: '#f43f5e'
-        });
+        Swal.fire({ ...swalConfig, title: 'Error', text: data.message, icon: 'error', confirmButtonColor: '#f43f5e' });
       }
     } catch (error) {
-      Swal.fire({
-        ...swalConfig,
-        title: 'Connection Error',
-        text: 'Cannot connect to server.',
-        icon: 'error',
-        confirmButtonColor: '#f43f5e'
-      });
+      Swal.fire({ ...swalConfig, title: 'Connection Error', text: 'Cannot connect to server.', icon: 'error', confirmButtonColor: '#f43f5e' });
     }
   };
 
   const handleJoinTeam = async (eventId) => {
     const token = localStorage.getItem('token');
     const inviteCode = teamInput[eventId];
-
-    if (!inviteCode) {
-      return Swal.fire({
-        ...swalConfig,
-        title: 'Missing Information',
-        text: 'Please enter the invite code!',
-        icon: 'warning',
-        confirmButtonColor: '#f59e0b'
-      });
-    }
+    if (!inviteCode) return Swal.fire({ ...swalConfig, title: 'Missing Information', text: 'Please enter the invite code!', icon: 'warning', confirmButtonColor: '#f59e0b' });
 
     try {
       const response = await fetch(`https://college-event-portal-a0d1.onrender.com/api/events/${eventId}/team/join`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ inviteCode })
       });
-
       const data = await response.json();
-
       if (response.ok) {
-        Swal.fire({
-          ...swalConfig,
-          title: 'Joined Successfully!',
-          text: data.message,
-          icon: 'success',
-          confirmButtonColor: '#f97316'
-        });
+        Swal.fire({ ...swalConfig, title: 'Joined Successfully!', text: data.message, icon: 'success', confirmButtonColor: '#f97316' });
         fetchEvents();
       } else {
-        Swal.fire({
-          ...swalConfig,
-          title: 'Error',
-          text: data.message,
-          icon: 'error',
-          confirmButtonColor: '#f43f5e'
-        });
+        Swal.fire({ ...swalConfig, title: 'Error', text: data.message, icon: 'error', confirmButtonColor: '#f43f5e' });
       }
     } catch (error) {
-      Swal.fire({
-        ...swalConfig,
-        title: 'Connection Error',
-        text: 'Cannot connect to server.',
-        icon: 'error',
-        confirmButtonColor: '#f43f5e'
-      });
+      Swal.fire({ ...swalConfig, title: 'Connection Error', text: 'Cannot connect to server.', icon: 'error', confirmButtonColor: '#f43f5e' });
     }
   };
 
@@ -289,63 +210,40 @@ const Dashboard = () => {
       });
       if (response.ok) {
         setEvents(events.filter(event => event._id !== eventId));
-        Swal.fire({
-          ...swalConfig,
-          title: 'Deleted!',
-          text: 'The event has been successfully deleted.',
-          icon: 'success',
-          confirmButtonColor: '#f97316'
-        });
+        Swal.fire({ ...swalConfig, title: 'Deleted!', text: 'Event deleted successfully.', icon: 'success', confirmButtonColor: '#f97316' });
       } else {
         const data = await response.json();
-        Swal.fire({
-          ...swalConfig,
-          title: 'Error',
-          text: data.message,
-          icon: 'error',
-          confirmButtonColor: '#f43f5e'
-        });
+        Swal.fire({ ...swalConfig, title: 'Error', text: data.message, icon: 'error', confirmButtonColor: '#f43f5e' });
       }
     } catch (error) {
-      Swal.fire({
-        ...swalConfig,
-        title: 'Connection Error',
-        text: 'Cannot connect to server.',
-        icon: 'error',
-        confirmButtonColor: '#f43f5e'
-      });
+      Swal.fire({ ...swalConfig, title: 'Connection Error', text: 'Cannot connect to server.', icon: 'error', confirmButtonColor: '#f43f5e' });
     }
   };
 
-  // --- ADVANCED FILTERING & AUTO-ARCHIVING ---
+  // --- TABS & FILTERING LOGIC ---
   const filteredEvents = events.filter((event) => {
-    // 1. Check Search and Category
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           event.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || event.category === selectedCategory;
     
-    // 2. Auto-Archive Logic (Hide completed events)
     const eventDate = new Date(event.date);
     const now = new Date();
-    
-    // We add 24 hours (86,400,000 milliseconds) to the event date so it doesn't vanish 
-    // from the dashboard while the event is currently happening!
-    const isNotExpired = eventDate.getTime() + (24 * 60 * 60 * 1000) >= now.getTime();
+    const isPast = eventDate.getTime() + (24 * 60 * 60 * 1000) < now.getTime();
 
-    // 3. Visibility Rule: Students/Volunteers only see active events. Admins see everything.
-    const isVisibleToUser = isNotExpired || userRole === 'admin';
+    // Tab Logic: 'upcoming' shows future/live events, 'past' shows concluded events
+    const matchesTab = activeTab === 'upcoming' ? !isPast : isPast;
 
-    return matchesSearch && matchesCategory && isVisibleToUser;
+    return matchesSearch && matchesCategory && matchesTab;
   });
 
   return (
     <div className="min-h-screen bg-[#fff8f6] py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden font-sans text-stone-800 selection:bg-orange-500/20">
       
-      {/* --- AURORA AMBIENT BACKGROUND BLOBS --- */}
+      {/* BACKGROUND BLOBS */}
       <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-rose-300/40 rounded-full blur-[120px] pointer-events-none mix-blend-multiply"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-300/40 rounded-full blur-[120px] pointer-events-none mix-blend-multiply"></div>
 
-      {/* --- LIVE BROADCAST BANNER POPUP --- */}
+      {/* LIVE BROADCAST BANNER */}
       {latestAlert && (
         <div className="fixed top-5 right-5 z-50 max-w-md bg-white/90 backdrop-blur-xl p-5 rounded-3xl shadow-xl shadow-rose-500/10 border border-rose-100 animate-bounce flex items-start gap-4">
           <span className="text-3xl filter drop-shadow-sm">🚨</span>
@@ -363,12 +261,10 @@ const Dashboard = () => {
 
       <div className="max-w-7xl mx-auto relative z-10">
         
-        {/* --- AURORA HEADER SECTION --- */}
+        {/* HEADER SECTION */}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-10 gap-6 bg-white/60 backdrop-blur-xl p-6 md:p-8 rounded-[2rem] shadow-xl shadow-rose-900/5 border border-white">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <h1 className="text-4xl md:text-5xl font-black text-stone-800 tracking-tight">
-              Event Hub
-            </h1>
+            <h1 className="text-4xl md:text-5xl font-black text-stone-800 tracking-tight">Event Hub</h1>
             <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm mt-2 md:mt-0 border ${
               userRole === 'admin' ? 'bg-orange-100 text-orange-600 border-orange-200' : 
               userRole === 'volunteer' ? 'bg-rose-100 text-rose-600 border-rose-200' : 
@@ -379,8 +275,6 @@ const Dashboard = () => {
           </div>
           
           <div className="flex flex-wrap gap-3 items-center w-full xl:w-auto">
-            
-            {/* Notification Bell */}
             <button 
               onClick={() => setShowNotificationModal(true)}
               className="relative bg-white/80 hover:bg-white border border-white text-stone-700 w-12 h-12 rounded-xl transition-all duration-300 flex items-center justify-center transform hover:-translate-y-0.5 shadow-sm"
@@ -395,59 +289,80 @@ const Dashboard = () => {
 
             {userRole === 'student' && (
               <>
-                <Link to="/my-registrations" className="bg-white/80 hover:bg-white text-orange-600 border border-white px-5 py-3 rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2 shadow-sm">
-                   🎫 My Tickets
+                <Link to="/my-registrations" className="bg-white/80 hover:bg-white text-orange-600 border border-white px-5 py-3 rounded-xl font-bold transition-all transform hover:-translate-y-0.5 flex items-center gap-2 shadow-sm">
+                  🎫 My Tickets
                 </Link>
-                 <Link to="/schedule" className="bg-white/80 hover:bg-white text-stone-600 border border-white px-5 py-3 rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2 shadow-sm">
-                   📅 Itinerary
+                 <Link to="/schedule" className="bg-white/80 hover:bg-white text-stone-600 border border-white px-5 py-3 rounded-xl font-bold transition-all transform hover:-translate-y-0.5 flex items-center gap-2 shadow-sm">
+                  📅 Itinerary
                 </Link>
               </>
             )}
-            <Link to="/profile" className="bg-white/80 hover:bg-white text-stone-600 border border-white px-5 py-3 rounded-xl font-bold transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2 shadow-sm">
+            <Link to="/profile" className="bg-white/80 hover:bg-white text-stone-600 border border-white px-5 py-3 rounded-xl font-bold transition-all transform hover:-translate-y-0.5 flex items-center gap-2 shadow-sm">
               👤 Profile
             </Link>
 
             {(userRole === 'admin' || userRole === 'volunteer') && (
-              <Link to="/admin-scanner" className="bg-white/80 hover:bg-white text-stone-800 px-6 py-3 rounded-xl font-bold shadow-sm border border-white transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2">
+              <Link to="/admin-scanner" className="bg-white/80 hover:bg-white text-stone-800 px-6 py-3 rounded-xl font-bold shadow-sm border border-white transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
                 📷 Scan Tickets
               </Link>
             )}
 
             {userRole === 'admin' && (
               <>
-                <Link to="/admin/broadcast" className="bg-white/80 hover:bg-white border border-white text-rose-500 px-6 py-3 rounded-xl font-bold shadow-sm transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2">
+                <Link to="/analytics" className="bg-white/80 hover:bg-white border border-white text-violet-500 px-6 py-3 rounded-xl font-bold shadow-sm transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
+                  📊 Analytics
+                </Link>
+                <Link to="/admin/broadcast" className="bg-white/80 hover:bg-white border border-white text-rose-500 px-6 py-3 rounded-xl font-bold shadow-sm transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
                   📢 Broadcast
                 </Link>
-                <Link to="/create-event" className="bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 text-white px-6 py-3 rounded-xl font-black shadow-md shadow-rose-500/20 transition-all duration-300 transform hover:-translate-y-0.5 flex items-center gap-2">
+                <Link to="/create-event" className="bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 text-white px-6 py-3 rounded-xl font-black shadow-md shadow-rose-500/20 transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
                   + Create Event
                 </Link>
               </>
             )}
 
-            <button onClick={handleLogout} className="bg-white/50 hover:bg-rose-50 text-rose-500 border border-white px-5 py-3 rounded-xl font-bold transition-all duration-300 ml-auto xl:ml-0 shadow-sm">
+            <button onClick={handleLogout} className="bg-white/50 hover:bg-rose-50 text-rose-500 border border-white px-5 py-3 rounded-xl font-bold transition-all ml-auto xl:ml-0 shadow-sm">
               Logout
             </button>
           </div>
         </div>
 
-        {/* --- SEARCH & FILTER BAR --- */}
-        <div className="bg-white/60 backdrop-blur-xl p-3 rounded-[1.5rem] shadow-xl shadow-rose-900/5 border border-white flex flex-col md:flex-row gap-3 mb-10 items-center justify-between">
+        {/* --- TABS & SEARCH BAR --- */}
+        <div className="bg-white/60 backdrop-blur-xl p-3 rounded-[1.5rem] shadow-xl shadow-rose-900/5 border border-white flex flex-col md:flex-row gap-4 mb-10 items-center justify-between">
+          
+          {/* UPCOMING VS PAST TABS */}
+          <div className="flex bg-stone-100/50 p-1 rounded-xl w-full md:w-auto">
+            <button 
+              onClick={() => setActiveTab('upcoming')}
+              className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${activeTab === 'upcoming' ? 'bg-white text-orange-500 shadow-sm border border-white' : 'text-stone-400 hover:text-stone-600'}`}
+            >
+              ⚡ Upcoming
+            </button>
+            <button 
+              onClick={() => setActiveTab('past')}
+              className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-sm font-black uppercase tracking-widest transition-all ${activeTab === 'past' ? 'bg-white text-stone-800 shadow-sm border border-white' : 'text-stone-400 hover:text-stone-600'}`}
+            >
+              📁 Past Events
+            </button>
+          </div>
+
           <div className="relative w-full md:w-1/3">
-            <span className="absolute left-4 top-3.5 text-stone-400">🔍</span>
+            <span className="absolute left-4 top-3 text-stone-400">🔍</span>
             <input
               type="text"
               placeholder="Search events..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-white/50 border border-white/50 rounded-xl focus:ring-2 focus:ring-orange-400 transition-colors font-medium text-stone-800 placeholder-stone-400 outline-none"
+              className="w-full pl-11 pr-4 py-2.5 bg-white/50 border border-white/50 rounded-xl focus:ring-2 focus:ring-orange-400 transition-colors font-medium text-stone-800 placeholder-stone-400 outline-none"
             />
           </div>
+          
           <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar">
             {['All', 'College Fest', 'Workshop', 'Hackathon', 'Seminar', 'Sports', 'Cultural'].map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-300 ${
+                className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-300 ${
                   selectedCategory === cat 
                     ? 'bg-gradient-to-r from-orange-400 to-rose-400 text-white shadow-md shadow-rose-500/20 border border-transparent' 
                     : 'bg-transparent text-stone-500 hover:bg-white hover:text-stone-800 border border-transparent'
@@ -470,24 +385,27 @@ const Dashboard = () => {
           ) : filteredEvents.length === 0 ? (
             <div className="col-span-full text-center py-20">
               <span className="text-6xl block mb-4 opacity-50">🔭</span>
-              <h2 className="text-2xl font-black text-stone-800">No events found in this sector</h2>
+              <h2 className="text-2xl font-black text-stone-800">No {activeTab} events found in this sector</h2>
               <p className="text-stone-500 font-medium mt-2">Try adjusting your search parameters.</p>
             </div>
           ) : (
             filteredEvents.map((event) => {
               const registeredCount = event.registeredUsers?.length || 0;
               const isSoldOut = registeredCount >= event.seatLimit;
-              
               const isAlreadyRegistered = userId && event.registeredUsers?.includes(userId);
               const isWaitlisted = userId && event.waitlistedUsers?.includes(userId);
+              const status = getEventStatus(event.date);
+              const isPast = status.label === 'Concluded';
 
               return (
-                <div key={event._id} className="bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-xl shadow-rose-900/5 hover:shadow-2xl hover:shadow-rose-900/10 transition-all duration-500 transform hover:-translate-y-2 border border-white flex flex-col justify-between relative overflow-hidden group">
+                <div key={event._id} className={`bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-xl shadow-rose-900/5 hover:shadow-2xl hover:shadow-rose-900/10 transition-all duration-500 transform hover:-translate-y-2 border border-white flex flex-col justify-between relative overflow-hidden group ${isPast ? 'grayscale-[0.4] opacity-90' : ''}`}>
                   
                   <div className="p-7 relative z-10 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-4">
-                      <span className="bg-white text-orange-600 border border-orange-100 text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm">
-                        {event.category}
+                      {/* Dynamic Status Badge */}
+                      <span className={`border text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 ${status.color}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`}></span>
+                        {status.label}
                       </span>
                       {event.allowTeams && (
                         <span className="text-[10px] font-black text-stone-500 bg-white border border-stone-100 px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm">
@@ -504,15 +422,14 @@ const Dashboard = () => {
                       <p className="flex items-center text-sm font-bold text-stone-700"><span className="bg-white p-1 rounded-md shadow-sm text-xs mr-3">📅</span> {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                       <p className="flex items-center text-sm font-bold text-stone-700"><span className="bg-white p-1 rounded-md shadow-sm text-xs mr-3">⏰</span> {event.festDay || 'Day 1'} • {event.startTime || 'TBA'} - {event.endTime || 'TBA'}</p>
                       
-                      {/* Frosted Progress Bar */}
                       <div className="pt-3 mt-3 border-t border-white/50">
                         <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-1.5">
-                          <span className={isSoldOut ? 'text-rose-500' : 'text-stone-500'}>Seats Filled</span>
+                          <span className={isSoldOut && !isPast ? 'text-rose-500' : 'text-stone-500'}>Seats Filled</span>
                           <span className="text-stone-500">{registeredCount} / {event.seatLimit}</span>
                         </div>
                         <div className="w-full bg-white/80 rounded-full h-2 overflow-hidden border border-white">
                           <div 
-                            className={`h-2 rounded-full ${isSoldOut ? 'bg-rose-500' : 'bg-gradient-to-r from-orange-400 to-rose-400'}`} 
+                            className={`h-2 rounded-full ${isPast ? 'bg-stone-400' : isSoldOut ? 'bg-rose-500' : 'bg-gradient-to-r from-orange-400 to-rose-400'}`} 
                             style={{ width: `${Math.min((registeredCount / event.seatLimit) * 100, 100)}%` }}
                           ></div>
                         </div>
@@ -527,7 +444,6 @@ const Dashboard = () => {
                         <Link to={`/admin/event/${event._id}`} className="flex-1 bg-white hover:bg-orange-50 border border-stone-100 text-stone-700 text-center font-bold py-3.5 rounded-xl transition-all shadow-sm transform hover:-translate-y-0.5 text-sm">
                           View Details
                         </Link>
-                        
                         {userRole === 'admin' && (
                           <>
                             <Link to={`/admin/edit-event/${event._id}`} className="bg-white hover:bg-orange-50 border border-stone-100 text-stone-600 w-12 flex items-center justify-center rounded-xl transition-all shadow-sm transform hover:-translate-y-0.5" title="Edit Event">✏️</Link>
@@ -535,8 +451,13 @@ const Dashboard = () => {
                           </>
                         )}
                       </div>
+                    ) : isPast ? (
+                      // STUDENT: PAST EVENT VIEW
+                      <button disabled className="w-full bg-stone-100 text-stone-400 font-black tracking-wide py-3.5 rounded-xl cursor-not-allowed border border-stone-200 shadow-sm flex items-center justify-center gap-2">
+                        🏁 Event Concluded
+                      </button>
                     ) : (
-                      // Student View
+                      // STUDENT: UPCOMING EVENT VIEW
                       <div className="space-y-3">
                         {isAlreadyRegistered ? (
                           <>
@@ -649,7 +570,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* --- NOTIFICATION MODAL --- */}
+      {/* NOTIFICATION MODAL */}
       {showNotificationModal && (
         <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-white/90 backdrop-blur-2xl rounded-[2.5rem] max-w-lg w-full p-8 shadow-2xl border border-white transform transition-all">
@@ -688,7 +609,6 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };
