@@ -10,13 +10,14 @@ const eventSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    date: {
+    // --- NEW: CALENDAR DATE SYSTEM ---
+    startDate: {
       type: Date,
       required: true,
     },
-    festDay: {
-      type: String,
-      default: 'Day 1',
+    endDate: {
+      type: Date,
+      required: true,
     },
     startTime: {
       type: String, 
@@ -26,6 +27,7 @@ const eventSchema = mongoose.Schema(
       type: String,
       default: "11:00 AM",
     },
+    // ---------------------------------
     venue: {
       type: String,
       required: true,

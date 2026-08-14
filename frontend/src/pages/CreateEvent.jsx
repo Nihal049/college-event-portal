@@ -7,11 +7,11 @@ const CreateEvent = () => {
     title: '',
     description: '',
     category: 'College Fest',
-    date: '',
     venue: '',
     seatLimit: '',
-    festDay: 'Day 1',
+    startDate: '', // <-- NEW
     startTime: '',
+    endDate: '',   // <-- NEW
     endTime: '',
     offersAccommodation: false,
     allowTeams: false,
@@ -56,7 +56,7 @@ const CreateEvent = () => {
           title: 'System Updated',
           text: 'Event created successfully!',
           icon: 'success',
-          confirmButtonColor: '#f97316' // Orange-500
+          confirmButtonColor: '#f97316'
         });
         setTimeout(() => navigate('/dashboard'), 1500); 
       } else {
@@ -65,7 +65,7 @@ const CreateEvent = () => {
           title: 'Error',
           text: data.message || 'Failed to create event',
           icon: 'error',
-          confirmButtonColor: '#f43f5e' // Rose-500
+          confirmButtonColor: '#f43f5e'
         });
         setIsSubmitting(false);
       }
@@ -159,8 +159,8 @@ const CreateEvent = () => {
               ></textarea>
             </div>
 
-            {/* Logistics Row: Venue, Date, Capacity */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-white/50 rounded-2xl border border-white shadow-sm">
+            {/* Logistics Row: Venue, Capacity */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/50 rounded-2xl border border-white shadow-sm">
               <div>
                 <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">Venue</label>
                 <input
@@ -170,18 +170,6 @@ const CreateEvent = () => {
                   className="block w-full px-4 py-3.5 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none placeholder-stone-400 shadow-inner"
                   placeholder="e.g. Main Auditorium"
                   value={formData.venue}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">Date & Time</label>
-                <input
-                  name="date"
-                  type="datetime-local"
-                  required
-                  className="block w-full px-4 py-3.5 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none shadow-inner"
-                  value={formData.date}
                   onChange={handleChange}
                 />
               </div>
@@ -201,47 +189,63 @@ const CreateEvent = () => {
               </div>
             </div>
 
-            {/* --- TIMELINE SCHEDULE PANEL --- */}
+            {/* --- GOOGLE CALENDAR STYLE SCHEDULE PANEL --- */}
             <div>
-              <h3 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <span className="text-lg drop-shadow-sm">⏱️</span> Schedule Configuration
+              <h3 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-4 flex items-center gap-2 ml-1">
+                <span className="text-lg drop-shadow-sm">🗓️</span> Schedule Configuration
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-white/50 rounded-2xl border border-white shadow-sm">
-                <div>
-                  <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">Fest Day</label>
-                  <select
-                    name="festDay"
-                    value={formData.festDay}
-                    onChange={handleChange}
-                    className="block w-full px-4 py-3.5 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none cursor-pointer shadow-inner"
-                  >
-                    <option value="Day 1">Day 1</option>
-                    <option value="Day 2">Day 2</option>
-                    <option value="Day 3">Day 3</option>
-                  </select>
+              <div className="space-y-5 p-6 bg-white/50 rounded-2xl border border-white shadow-sm">
+                
+                {/* Event Starts */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                  <label className="w-24 text-[10px] font-black text-stone-500 uppercase tracking-widest">Starts</label>
+                  <div className="flex-1 flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="date"
+                      name="startDate"
+                      required
+                      value={formData.startDate}
+                      onChange={handleChange}
+                      className="flex-1 px-4 py-3 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none shadow-inner"
+                    />
+                    <input
+                      type="text"
+                      name="startTime"
+                      required
+                      placeholder="e.g. 09:00 AM"
+                      value={formData.startTime}
+                      onChange={handleChange}
+                      className="flex-1 px-4 py-3 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none placeholder-stone-400 shadow-inner"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">Start Time</label>
-                  <input
-                    type="text"
-                    name="startTime"
-                    placeholder="e.g. 10:00 AM"
-                    value={formData.startTime}
-                    onChange={handleChange}
-                    className="block w-full px-4 py-3.5 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none placeholder-stone-400 shadow-inner"
-                  />
+
+                <div className="border-t border-white/60"></div>
+
+                {/* Event Ends */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                  <label className="w-24 text-[10px] font-black text-stone-500 uppercase tracking-widest">Ends</label>
+                  <div className="flex-1 flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="date"
+                      name="endDate"
+                      required
+                      value={formData.endDate}
+                      onChange={handleChange}
+                      className="flex-1 px-4 py-3 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none shadow-inner"
+                    />
+                    <input
+                      type="text"
+                      name="endTime"
+                      required
+                      placeholder="e.g. 05:00 PM"
+                      value={formData.endTime}
+                      onChange={handleChange}
+                      className="flex-1 px-4 py-3 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none placeholder-stone-400 shadow-inner"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-black text-stone-500 uppercase tracking-widest mb-2 ml-1">End Time</label>
-                  <input
-                    type="text"
-                    name="endTime"
-                    placeholder="e.g. 02:00 PM"
-                    value={formData.endTime}
-                    onChange={handleChange}
-                    className="block w-full px-4 py-3.5 bg-white/60 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 transition-all font-bold text-stone-800 outline-none placeholder-stone-400 shadow-inner"
-                  />
-                </div>
+
               </div>
             </div>
 

@@ -87,6 +87,12 @@ const AdminEventDetails = () => {
     return rollA.localeCompare(rollB);
   });
 
+  // --- NEW: Calculate Feedback Stats ---
+  const feedbackList = event.feedbacks || [];
+  const averageRating = feedbackList.length > 0 
+    ? (feedbackList.reduce((acc, curr) => acc + curr.rating, 0) / feedbackList.length).toFixed(1) 
+    : 0;
+
   return (
     <div className="min-h-screen bg-[#fff8f6] py-12 px-4 sm:px-6 lg:px-8 font-sans relative overflow-hidden text-stone-800 selection:bg-orange-500/20">
       
@@ -326,6 +332,61 @@ const AdminEventDetails = () => {
             </div>
           </div>
         )}
+
+        {/* --- NEW: STUDENT FEEDBACK & RATINGS --- */}
+        <div className="bg-white/60 backdrop-blur-2xl rounded-[2rem] border border-white shadow-xl shadow-rose-900/5 overflow-hidden mt-8">
+          <div className="bg-white/80 px-6 py-5 border-b border-white flex flex-col sm:flex-row justify-between items-center gap-3 shadow-sm">
+            <h2 className="font-black text-stone-800 uppercase tracking-widest text-sm flex items-center gap-2">
+              ⭐ Student Feedback & Ratings
+            </h2>
+            <div className="flex items-center gap-3">
+              <span className="bg-amber-50 border border-amber-100 text-amber-600 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm">
+                {feedbackList.length} Reviews
+              </span>
+              {feedbackList.length > 0 && (
+                <span className="bg-stone-800 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1">
+                  Average {averageRating} <span className="text-amber-400 text-sm leading-none">★</span>
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="p-6 md:p-8">
+            {feedbackList.length === 0 ? (
+              <div className="text-center py-10">
+                <span className="text-4xl block mb-3 opacity-50">📭</span>
+                <p className="text-stone-400 font-bold uppercase tracking-widest text-xs">No feedback submitted yet.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Maps through reviews to generate glass cards */}
+                {feedbackList.map((feedback) => (
+                  <div key={feedback._id} className="bg-white/80 p-6 rounded-[1.5rem] border border-white shadow-sm hover:shadow-md transition-shadow relative flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <p className="font-bold text-stone-800">{feedback.student?.name || 'Unknown Student'}</p>
+                          <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{feedback.student?.rollNumber || 'N/A'}</p>
+                        </div>
+                        <div className="bg-amber-50 border border-amber-100 px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-sm">
+                          <span className="text-amber-600 font-black text-sm">{feedback.rating}</span>
+                          <span className="text-amber-400 text-xs">★</span>
+                        </div>
+                      </div>
+                      <p className="text-stone-600 text-sm font-medium leading-relaxed bg-stone-50/50 p-4 rounded-xl border border-stone-100/50 shadow-inner">
+                        "{feedback.comment}"
+                      </p>
+                    </div>
+                    <p className="text-[9px] text-stone-400 uppercase tracking-widest mt-5 font-bold">
+                      Submitted: {new Date(feedback.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );

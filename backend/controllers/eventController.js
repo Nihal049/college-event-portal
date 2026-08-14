@@ -15,15 +15,14 @@ const getEvents = async (req, res) => {
 const createEvent = async (req, res) => {
   try {
     const { 
-      title, description, category, date, venue, seatLimit, 
-      offersAccommodation, allowTeams, maxTeamSize,
-      festDay, startTime, endTime 
+      title, description, category, startDate, endDate, venue, seatLimit, 
+      offersAccommodation, allowTeams, maxTeamSize, startTime, endTime 
     } = req.body;
 
     const event = await Event.create({
-      title, description, category, date, venue, seatLimit, 
-      offersAccommodation, allowTeams, maxTeamSize, festDay, 
-      startTime, endTime, organizer: req.user.id
+      title, description, category, startDate, endDate, venue, seatLimit, 
+      offersAccommodation, allowTeams, maxTeamSize, startTime, endTime, 
+      organizer: req.user.id
     });
 
     res.status(201).json({ message: 'Event created successfully', event });
@@ -85,7 +84,7 @@ const registerForEvent = async (req, res) => {
           <p>You have successfully registered for <strong>${event.title}</strong>.</p>
           <div style="background-color: #f8fafc; padding: 15px; border-radius: 5px; margin: 20px 0;">
             <p style="margin: 5px 0;"><strong>📍 Venue:</strong> ${event.venue}</p>
-            <p style="margin: 5px 0;"><strong>📅 Date:</strong> ${new Date(event.date).toLocaleDateString()}</p>
+            <p style="margin: 5px 0;"><strong>📅 Starts:</strong> ${new Date(event.startDate).toLocaleDateString()}</p>
           </div>
           <p>Please log in to your Student Dashboard to view your official QR Code ticket for entry.</p>
           <br>
@@ -170,10 +169,10 @@ const deleteEvent = async (req, res) => {
 
 const updateEvent = async (req, res) => {
   try {
-    const { title, description, date, venue, category, seatLimit } = req.body;
+    const { title, description, startDate, endDate, venue, category, seatLimit, startTime, endTime } = req.body;
     const updatedEvent = await Event.findByIdAndUpdate(
       req.params.id,
-      { title, description, date, venue, category, seatLimit },
+      { title, description, startDate, endDate, venue, category, seatLimit, startTime, endTime },
       { new: true, runValidators: false }
     );
     if (!updatedEvent) return res.status(404).json({ message: 'Event not found' });
@@ -401,7 +400,6 @@ const toggleBookmark = async (req, res) => {
   }
 };
 
-// --- NEW: FEEDBACK SUBMISSION ---
 const submitFeedback = async (req, res) => {
   try {
     const { rating, comment } = req.body;
@@ -409,12 +407,10 @@ const submitFeedback = async (req, res) => {
 
     if (!event) return res.status(404).json({ message: 'Event not found' });
 
-    // Ensure the student actually attended the event before allowing a review
     if (!event.checkedInUsers.includes(req.user.id)) {
       return res.status(400).json({ message: 'You can only review events you actually attended.' });
     }
 
-    // Ensure they haven't already submitted a review
     const alreadyReviewed = event.feedbacks?.find(
       (r) => r.student.toString() === req.user.id.toString()
     );
