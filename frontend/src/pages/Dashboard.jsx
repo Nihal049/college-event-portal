@@ -492,7 +492,7 @@ const Dashboard = () => {
                                 <label htmlFor={`acc-${event._id}`} className="text-[10px] font-black uppercase tracking-widest text-stone-600 cursor-pointer flex-1">Request Hostel Stay</label>
                               </div>
                             )}
-                            <button onClick={() => handleRegister(event._id, accommodationRequests[event._id])} className="w-full bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 text-white font-black py-3.5 rounded-xl transition-all shadow-lg shadow-rose-500/25 transform hover:-translate-y-0.5 active:scale-95">Get Ticket</button>
+                            <button onClick={() => handleRegister(event._id, accommodationRequests[event._id])} className="w-full bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 text-white font-black py-3.5 rounded-xl transition-all shadow-lg shadow-rose-500/25 transform hover:-translate-y-0.5 active:scale-95">Register</button>
                           </>
                         )}
                       </div>

@@ -335,7 +335,7 @@ const MyRegistrations = () => {
                               Download PDF
                             </button>
                             <button onClick={() => handleCancel(event._id)} className="w-full bg-white border border-stone-200 hover:bg-rose-50 text-rose-500 text-xs font-bold py-3 px-4 rounded-xl transition-colors active:scale-95 shadow-sm">
-                              Cancel Ticket
+                              Cancel Registration
                             </button>
                           </>
                         )}

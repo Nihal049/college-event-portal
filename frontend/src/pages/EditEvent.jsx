@@ -169,7 +169,7 @@ const EditEvent = () => {
             {/* --- GOOGLE CALENDAR STYLE SCHEDULE PANEL --- */}
             <div>
               <h3 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-4 flex items-center gap-2 ml-1">
-                <span className="text-lg drop-shadow-sm">🗓️</span> Schedule Configuration
+                <span className="text-lg drop-shadow-sm">🗓️</span> Schedule event
               </h3>
               <div className="space-y-5 p-6 bg-white/50 rounded-2xl border border-white shadow-sm">
                 
@@ -201,7 +201,7 @@ const EditEvent = () => {
                 Discard
               </Link>
               <button type="submit" disabled={isSubmitting} className={`w-full sm:w-2/3 flex justify-center items-center py-4 rounded-xl text-white font-black text-sm uppercase tracking-widest shadow-lg transform transition-all ${isSubmitting ? 'bg-stone-200 border border-stone-200 text-stone-400 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-orange-400 to-rose-400 hover:from-orange-500 hover:to-rose-500 shadow-rose-500/25 hover:-translate-y-0.5 active:scale-95'}`}>
-                {isSubmitting ? 'Applying Changes...' : 'Update System Data'}
+                {isSubmitting ? 'Applying Changes...' : 'Update Event'}
               </button>
             </div>
           </form>

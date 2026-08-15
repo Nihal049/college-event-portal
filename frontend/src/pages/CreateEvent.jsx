@@ -331,7 +331,7 @@ const CreateEvent = () => {
                     Deploying...
                   </span>
                 ) : (
-                  'Deploy Event Protocol'
+                  'Create Event'
                 )}
               </button>
             </div>

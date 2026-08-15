@@ -22,7 +22,7 @@ const ForgotPassword = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage('Success! Recovery protocol sent to your email.');
+        setMessage('Success! Reset link sent to your email.');
         setIsError(false);
       } else {
         setMessage(data.message || 'Failed to send reset link');
@@ -54,7 +54,7 @@ const ForgotPassword = () => {
               <span className="text-3xl filter drop-shadow-sm">🔐</span>
             </div>
             <h1 className="text-3xl font-black text-stone-800 pb-1 leading-tight tracking-tight">
-              System Recovery
+              Account Recovery
             </h1>
             <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-2">
               Enter your email to reset access

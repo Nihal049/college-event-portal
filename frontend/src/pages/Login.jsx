@@ -151,7 +151,7 @@ const Login = () => {
                     Authenticating...
                   </span>
                 ) : (
-                  'System Login'
+                  'Login'
                 )}
               </button>
             </div>

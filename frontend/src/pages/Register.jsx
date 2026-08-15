@@ -99,7 +99,7 @@ const Register = () => {
                   type="text"
                   required
                   className="block w-full pl-12 pr-4 py-3.5 bg-white/50 border border-white rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all font-bold text-stone-800 outline-none placeholder-stone-400 shadow-inner"
-                  placeholder="John Doe"
+                  placeholder="Name as per college records"
                   value={formData.name}
                   onChange={handleChange}
                 />
@@ -208,7 +208,7 @@ const Register = () => {
                     Processing...
                   </span>
                 ) : (
-                  'Initialize Account'
+                  'Create Account'
                 )}
               </button>
             </div>
